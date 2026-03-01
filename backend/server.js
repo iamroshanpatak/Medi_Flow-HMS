@@ -68,7 +68,7 @@ const appointmentRoutes = require('./routes/appointments');
 const doctorRoutes = require('./routes/doctors');
 const queueRoutes = require('./routes/queue');
 const medicalRecordsRoutes = require('./routes/medicalRecords');
-// const userRoutes = require('./routes/users');
+const userRoutes = require('./routes/users');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -76,7 +76,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/medical-records', medicalRecordsRoutes);
-// app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

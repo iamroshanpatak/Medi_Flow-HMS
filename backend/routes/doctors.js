@@ -38,6 +38,28 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/doctors/meta/specializations
+// @desc    Get all unique specializations
+// @access  Public
+router.get('/meta/specializations', async (req, res) => {
+  try {
+    const specializations = await User.distinct('specialization', {
+      role: 'doctor',
+      isActive: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: specializations.filter(Boolean),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 // @route   GET /api/doctors/:id
 // @desc    Get single doctor
 // @access  Public
@@ -226,28 +248,6 @@ router.get('/:id/appointments', protect, async (req, res) => {
       success: true,
       count: appointments.length,
       data: appointments,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
-// @route   GET /api/doctors/specializations
-// @desc    Get all unique specializations
-// @access  Public
-router.get('/meta/specializations', async (req, res) => {
-  try {
-    const specializations = await User.distinct('specialization', {
-      role: 'doctor',
-      isActive: true,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: specializations.filter(Boolean),
     });
   } catch (error) {
     res.status(500).json({
