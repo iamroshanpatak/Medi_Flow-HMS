@@ -1,0 +1,312 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}}
+\fs24
+\pard\qc\b\fs36 MediFlow\par
+\b0\fs24 Hospital Management System\par
+Project Report (Chapters 1\u8211?7)\par
+\par
+\pard\qc Submitted by: __________________________\par
+Submitted to: ____________________________\par
+Institution: _____________________________\par
+Department: ______________________________\par
+Date: _________________________________\par
+\par
+\pard\ql\b\fs28 Abstract\par
+\b0\fs24
+MediFlow is a web-based Hospital Management System that helps patients, doctors, and administrators manage appointments, patient queues, and medical records. The system provides role-based dashboards, secure login using JSON Web Tokens (JWT), and real-time queue updates using Socket.IO. The frontend is built with Next.js (React + TypeScript) and Tailwind CSS, and the backend is built with Node.js and Express. MongoDB is used for storing users, appointments, queue entries, and medical records. This report describes the background, design, implementation, and testing of the system in simple and clear terms.\par
+\par
+\b\fs28 Table of Contents\par
+\b0\fs24
+Abstract\par
+Chapter 1: Introduction\par
+Chapter 2: Literature Review\par
+Chapter 3: Methodology\par
+Chapter 4: System Analysis and Design\par
+Chapter 5: System Implementation\par
+Chapter 6: Testing\par
+Chapter 7: Conclusion and Future Enhancements\par
+References\par
+\par
+\pard\ql\b\fs30 Chapter 1: Introduction\par
+\b0\fs24
+\b 1.1 Background\par
+\b0
+Hospitals manage many activities every day such as patient registration, appointment scheduling, doctor availability, and patient flow (queue). When these tasks are handled manually, it can increase waiting time, cause errors, and make it hard to track patient information. Modern hospitals use web systems to make these tasks faster, more accurate, and easier to monitor.\par
+\par
+\b 1.2 Problem Statement\par
+\b0
+Manual and semi-digital hospital processes often lead to long waiting lines, difficulty in booking appointments, limited visibility of queue status, and scattered patient records. Patients cannot easily know their token number or estimated waiting time. Doctors and staff may not get a clear live view of the next patient.\par
+\par
+\b 1.3 Objectives of the Project\par
+\b0
+The main objectives of MediFlow are:\par
+\pard\li720\fs24
+\bullet\tab Provide online appointment booking for patients.\par
+\bullet\tab Provide doctor availability and time slot selection.\par
+\bullet\tab Provide real-time queue status with token number and estimated waiting time.\par
+\bullet\tab Provide role-based dashboards for patient, doctor, and admin/staff.\par
+\bullet\tab Store and manage medical records and prescriptions in a structured format.\par
+\bullet\tab Improve security using authentication and authorization (RBAC).\par
+\pard\li0
+\par
+\b 1.4 Scope of the System\par
+\b0
+MediFlow covers the following scope:\par
+\pard\li720
+\bullet\tab Patient: registration/login, booking appointments, viewing appointments, viewing queue status, accessing medical records.\par
+\bullet\tab Doctor: viewing queue, calling next patient, completing consultations, viewing medical records.\par
+\bullet\tab Admin/Staff: user management and system monitoring (as provided by the application UI).\par
+\pard\li0
+\par
+\b 1.5 Limitations\par
+\b0
+This project is designed mainly for web-based use in a controlled environment. Some features mentioned in documentation (for example, full production-grade email/SMS delivery, advanced reporting, or full automated testing pipelines) may require extra configuration and further development before production deployment.\par
+\par
+\b 1.6 Organization of the Report\par
+\b0
+This report is organized into seven chapters: introduction, literature review, methodology, analysis and design, implementation, testing, and conclusion with future enhancements, followed by references.\par
+\par
+\pard\ql\b\fs30 Chapter 2: Literature Review\par
+\b0\fs24
+\b 2.1 Hospital Management Systems (HMS)\par
+\b0
+A Hospital Management System is software that helps manage hospital activities such as patient records, appointments, billing, staff management, and operational workflows. A good HMS should be secure, reliable, easy to use, and able to handle many users.\par
+\par
+\b 2.2 Web-Based Applications for Healthcare\par
+\b0
+Web applications allow users to access services from any device with a browser. They reduce the need for physical paperwork, and they can provide faster communication between patients and healthcare workers.\par
+\par
+\b 2.3 Real-Time Systems (Queue Management)\par
+\b0
+Queue systems are important in hospitals to reduce patient waiting time and improve flow. Real-time updates can be achieved using WebSockets, which enable the server to push live updates to the client without constant manual refresh. Socket.IO is a popular library that provides WebSocket-like communication with fallback support.\par
+\par
+\b 2.4 Authentication and Authorization\par
+\b0
+Healthcare systems must protect sensitive information. Token-based authentication (such as JWT) is widely used in modern web applications because it allows stateless and secure client-server communication. Role-Based Access Control (RBAC) ensures that users can only access features and data allowed for their role (patient, doctor, admin, staff).\par
+\par
+\b 2.5 Database Technology\par
+\b0
+MongoDB is a NoSQL database that stores data in JSON-like documents. It is flexible and works well with modern web applications. Mongoose is an ODM (Object Data Modeling) library that helps define schemas, validations, and relationships for MongoDB in Node.js applications.\par
+\par
+\pard\ql\b\fs30 Chapter 3: Methodology\par
+\b0\fs24
+\b 3.1 Development Approach\par
+\b0
+MediFlow follows an iterative and modular development approach. Features are built in small parts (modules) and tested step by step. This approach helps reduce risk and makes it easier to add improvements over time.\par
+\par
+\b 3.2 Tools and Technologies Used\par
+\b0
+\pard\li720
+\bullet\tab Frontend: Next.js 16.1.0, React 19.2.3, TypeScript 5, Tailwind CSS 4, Axios.\par
+\bullet\tab Real-time: Socket.IO 4.8.1 (backend) and Socket.IO Client (frontend).\par
+\bullet\tab Backend: Node.js, Express 4.21.2, JWT (jsonwebtoken), bcryptjs.\par
+\bullet\tab Database: MongoDB with Mongoose 8.9.3.\par
+\bullet\tab Development: npm, nodemon, ESLint.\par
+\pard\li0
+\par
+\b 3.3 Requirement Gathering\par
+\b0
+Requirements were gathered by identifying common hospital workflows: appointment booking, queue/token system, role-based dashboards, and storing medical records. These requirements were organized into patient, doctor, and admin/staff responsibilities.\par
+\par
+\b 3.4 Design and Implementation Strategy\par
+\b0
+The system is designed with a clear separation of concerns:\par
+\pard\li720
+\bullet\tab Frontend handles UI, navigation, and user interactions.\par
+\bullet\tab Backend provides REST APIs and real-time socket events.\par
+\bullet\tab Database stores persistent data for users, appointments, queues, and records.\par
+\pard\li0
+\par
+\b 3.5 Testing Strategy\par
+\b0
+Testing in this project is mainly based on functional and integration testing by running the system and verifying that key user flows work correctly (login, booking, queue updates, and record access). Additional automated testing can be added as a future improvement.\par
+\par
+\pard\ql\b\fs30 Chapter 4: System Analysis and Design\par
+\b0\fs24
+\b 4.1 Functional Requirements\par
+\b0
+\b Patient Requirements\par
+\pard\li720
+\bullet\tab Register and login.\par
+\bullet\tab View profile and update information.\par
+\bullet\tab Book appointment by selecting doctor, date, and time slot.\par
+\bullet\tab View appointment list and status.\par
+\bullet\tab Check-in for today\'s appointment to generate a token.\par
+\bullet\tab Track token number, queue position, and estimated waiting time.\par
+\bullet\tab Receive notification when called (real-time).\par
+\pard\li0
+\par
+\b Doctor Requirements\par
+\pard\li720
+\bullet\tab Login and access doctor dashboard.\par
+\bullet\tab View and manage queue.\par
+\bullet\tab Call next patient and complete consultation.\par
+\bullet\tab View patient details and medical records.\par
+\bullet\tab Update availability/time slots.\par
+\pard\li0
+\par
+\b Admin/Staff Requirements\par
+\pard\li720
+\bullet\tab Manage users (patients, doctors, staff).\par
+\bullet\tab View overall system data such as appointments and queues.\par
+\bullet\tab Support walk-in queue entries (staff/admin).\par
+\pard\li0
+\par
+\b 4.2 Non-Functional Requirements\par
+\b0
+\pard\li720
+\bullet\tab Security: JWT authentication, role-based access control, password hashing.\par
+\bullet\tab Usability: responsive UI for mobile and desktop.\par
+\bullet\tab Performance: fast APIs and efficient database queries with indexes.\par
+\bullet\tab Reliability: consistent data validations using Mongoose schemas.\par
+\bullet\tab Maintainability: modular folders for frontend, backend, and database reference.\par
+\pard\li0
+\par
+\b 4.3 System Architecture\par
+\b0
+MediFlow uses a three-layer architecture:\par
+\pard\li720
+\bullet\tab Presentation Layer: Next.js frontend (React + TypeScript).\par
+\bullet\tab Application Layer: Express backend exposing REST APIs and Socket.IO events.\par
+\bullet\tab Data Layer: MongoDB database with Mongoose models.\par
+\pard\li0
+\par
+\b 4.4 Database Design (High-Level)\par
+\b0
+Main collections and relationships:\par
+\pard\li720
+\bullet\tab Users: stores all roles (patient, doctor, admin, staff).\par
+\bullet\tab Appointments: references patient and doctor users and stores date/time and status.\par
+\bullet\tab Queue: references patient and doctor and stores token number, position, and live status.\par
+\bullet\tab MedicalRecords: references patient and doctor and stores vitals, diagnosis, prescriptions, and attachments.\par
+\pard\li0
+\par
+\b 4.5 UI/UX Design\par
+\b0
+The UI is built with Tailwind CSS and uses role-based navigation (Sidebar + Navbar). Pages are separated under role folders (patient/doctor/admin) and protected using a route guard so users cannot open pages outside their role.\par
+\par
+\b 4.6 Security Design\par
+\b0
+Security is implemented using:\par
+\pard\li720
+\bullet\tab JWT tokens stored on client side and attached as a Bearer token for API calls.\par
+\bullet\tab Backend middleware that verifies tokens and sets the authenticated user in requests.\par
+\bullet\tab Role checks on API routes (authorize middleware).\par
+\pard\li0
+\par
+\pard\ql\b\fs30 Chapter 5: System Implementation\par
+\b0\fs24
+\b 5.1 Folder Structure\par
+\b0
+The project is organized into three main folders:\par
+\pard\li720
+\bullet\tab frontend/: Next.js app (UI, pages, components, contexts, services).\par
+\bullet\tab backend/: Express app (routes, models, middleware, server entry).\par
+\bullet\tab database/: reference organization for schemas/seeders/migrations.\par
+\pard\li0
+\par
+\b 5.2 Frontend Implementation\par
+\b0
+Key frontend implementation details:\par
+\pard\li720
+\bullet\tab Next.js App Router is used for routing and layouts.\par
+\bullet\tab AuthContext manages login state and stores token/user details.\par
+\bullet\tab services/api.ts provides Axios configuration and grouped API helpers.\par
+\bullet\tab ProtectedRoute ensures only authenticated users can access internal pages.\par
+\bullet\tab Tailwind CSS provides responsive styling across the UI.\par
+\pard\li0
+\par
+\b 5.3 Backend Implementation\par
+\b0
+Key backend implementation details:\par
+\pard\li720
+\bullet\tab Express.js handles REST API routes (auth, doctors, appointments, queue, medical records).\par
+\bullet\tab Mongoose models define schemas and validations for MongoDB collections.\par
+\bullet\tab JWT middleware (protect) authenticates requests using Authorization headers.\par
+\bullet\tab Role middleware (authorize) restricts access by role.\par
+\pard\li0
+\par
+\b 5.4 Real-Time Queue Updates (Socket.IO)\par
+\b0
+The system uses Socket.IO for live updates:\par
+\pard\li720
+\bullet\tab Doctors join a queue room based on their doctor ID and receive queue updates.\par
+\bullet\tab Patients join a personal room and receive a \"patient called\" event when it is their turn.\par
+\bullet\tab Backend emits events when check-in happens, when a walk-in entry is created, when a doctor calls next, and when a consultation is completed.\par
+\pard\li0
+\par
+\b 5.5 Configuration and Ports\par
+\b0
+For local development, the backend commonly runs on port 5001 (to avoid macOS conflicts on port 5000), and the frontend runs on port 3000 (or the next available port if 3000 is in use). The frontend reads API URLs from environment variables (NEXT_PUBLIC_API_URL and NEXT_PUBLIC_SOCKET_URL).\par
+\par
+\pard\ql\b\fs30 Chapter 6: Testing\par
+\b0\fs24
+\b 6.1 Testing Environment\par
+\b0
+Testing is performed by running MongoDB, starting backend and frontend servers, and checking the application in the browser.\par
+\par
+\b 6.2 Test Cases (Functional)\par
+\b0
+\b Authentication\par
+\pard\li720
+\bullet\tab Register a new user and confirm successful login token response.\par
+\bullet\tab Login with correct credentials and verify redirect to correct dashboard.\par
+\bullet\tab Try accessing protected pages without login and verify redirect to login.\par
+\pard\li0
+\par
+\b Appointment Booking\par
+\pard\li720
+\bullet\tab Patient selects a doctor, date, time slot, and reason; verify appointment is created.\par
+\bullet\tab Verify booking fails if required fields are missing.\par
+\bullet\tab Verify doctor availability endpoint returns open slots for a day.\par
+\pard\li0
+\par
+\b Queue Management\par
+\pard\li720
+\bullet\tab Patient checks in for today\'s appointment and receives a token number.\par
+\bullet\tab Doctor sees updated queue list without manual refresh (real-time).\par
+\bullet\tab Doctor calls next patient; patient receives a real-time notification.\par
+\bullet\tab Doctor completes consultation; queue updates and appointment status changes to completed.\par
+\pard\li0
+\par
+\b Medical Records\par
+\pard\li720
+\bullet\tab Doctor creates a medical record for a patient.\par
+\bullet\tab Patient views own medical records only.\par
+\bullet\tab Admin can delete records when required.\par
+\pard\li0
+\par
+\b 6.3 Expected Results\par
+\b0
+All core workflows should complete without errors and with correct authorization rules. Real-time features should work with Socket.IO rooms and event emission.\par
+\par
+\pard\ql\b\fs30 Chapter 7: Conclusion and Future Enhancements\par
+\b0\fs24
+\b 7.1 Conclusion\par
+\b0
+MediFlow provides a modern hospital management platform with appointment booking, real-time queue tracking, and medical record management. It supports multiple roles and improves patient experience by showing live queue progress and notifications. The system is built using widely-used web technologies and follows a clear modular structure.\par
+\par
+\b 7.2 Future Enhancements\par
+\b0
+Possible future improvements include:\par
+\pard\li720
+\bullet\tab Full production email/SMS delivery with templates and retry handling.\par
+\bullet\tab Advanced reporting and analytics dashboards for administrators.\par
+\bullet\tab Payment processing integration for consultation fees.\par
+\bullet\tab Audit logs for sensitive medical record access.\par
+\bullet\tab Automated unit/integration tests and CI pipeline.\par
+\bullet\tab More advanced scheduling rules (holidays, exceptions, recurring schedules).\par
+\pard\li0
+\par
+\pard\ql\b\fs28 References\par
+\b0\fs24
+1. Next.js Documentation (App Router, Routing, Deployment).\par
+2. React Documentation (Components, Hooks, State Management).\par
+3. Tailwind CSS Documentation (Utility classes and responsive design).\par
+4. Node.js Documentation (Runtime, npm).\par
+5. Express.js Documentation (Routing, Middleware).\par
+6. MongoDB Documentation (Collections, Indexes, CRUD).\par
+7. Mongoose Documentation (Schemas, Models, Validation).\par
+8. Socket.IO Documentation (Rooms, Events, Real-time communication).\par
+9. JSON Web Token (JWT) specification and common implementation guides.\par
+}

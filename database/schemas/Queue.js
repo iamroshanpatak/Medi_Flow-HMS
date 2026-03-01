@@ -88,6 +88,5 @@ queueSchema.pre('save', async function (next) {
 // Index for faster queries
 queueSchema.index({ doctor: 1, status: 1, createdAt: -1 });
 queueSchema.index({ patient: 1, status: 1 });
-queueSchema.index({ tokenNumber: 1 });
 
 module.exports = mongoose.model('Queue', queueSchema);

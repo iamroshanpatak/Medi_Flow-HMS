@@ -31,9 +31,22 @@ mongoose
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('joinQueue', (queueId) => {
-    socket.join(queueId);
-    console.log(`User ${socket.id} joined queue ${queueId}`);
+  // Join doctor's queue room
+  socket.on('joinDoctorQueue', (doctorId) => {
+    socket.join(`doctor-${doctorId}`);
+    console.log(`Socket ${socket.id} joined doctor-${doctorId} queue`);
+  });
+
+  // Join patient's room
+  socket.on('joinPatientRoom', (patientId) => {
+    socket.join(`patient-${patientId}`);
+    console.log(`Socket ${socket.id} joined patient-${patientId} room`);
+  });
+
+  // Leave rooms
+  socket.on('leaveRoom', (room) => {
+    socket.leave(room);
+    console.log(`Socket ${socket.id} left ${room}`);
   });
 
   socket.on('disconnect', () => {
@@ -51,14 +64,18 @@ app.get('/', (req, res) => {
 
 // Import routes
 const authRoutes = require('./routes/auth');
-// const appointmentRoutes = require('./routes/appointments');
-// const queueRoutes = require('./routes/queue');
+const appointmentRoutes = require('./routes/appointments');
+const doctorRoutes = require('./routes/doctors');
+const queueRoutes = require('./routes/queue');
+const medicalRecordsRoutes = require('./routes/medicalRecords');
 // const userRoutes = require('./routes/users');
 
 // Use routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/appointments', appointmentRoutes);
-// app.use('/api/queue', queueRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/queue', queueRoutes);
+app.use('/api/medical-records', medicalRecordsRoutes);
 // app.use('/api/users', userRoutes);
 
 // Error handling middleware

@@ -37,82 +37,108 @@ MediFlow is a comprehensive hospital management system designed to:
 ## 📁 Project Structure
 
 ```
-mediflow/
-├── client/                 # Frontend (Next.js)
-│   ├── app/               # Next.js App Router pages
-│   │   ├── patient/       # Patient dashboard & pages
-│   │   ├── doctor/        # Doctor dashboard & pages
-│   │   ├── admin/         # Admin dashboard & pages
-│   │   ├── globals.css    # Global styles
-│   │   ├── layout.tsx     # Root layout
-│   │   └── page.tsx       # Landing page
-│   ├── components/        # Reusable UI components
-│   │   ├── Navbar.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── Card.tsx
-│   │   ├── Button.tsx
-│   │   └── Input.tsx
-│   ├── lib/              # Utility functions
-│   │   └── api.ts        # API client
+Medi_Flow/
+├── frontend/              # Frontend (Next.js + TypeScript)
+│   ├── app/              # Next.js App Router pages
+│   │   ├── admin/        # Admin dashboard pages
+│   │   ├── doctor/       # Doctor dashboard pages
+│   │   ├── patient/      # Patient portal pages
+│   │   ├── login/        # Login page
+│   │   ├── register/     # Registration page
+│   │   ├── profile/      # User profile
+│   │   ├── layout.tsx    # Root layout
+│   │   └── page.tsx      # Home page
+│   ├── components/       # Reusable UI components
+│   ├── contexts/         # React Context providers
+│   ├── services/         # API services (Axios)
+│   ├── styles/           # Global styles
 │   ├── types/            # TypeScript types
-│   │   └── index.ts
+│   ├── hooks/            # Custom React hooks
+│   ├── utils/            # Utility functions
+│   ├── public/           # Static assets
 │   └── package.json
 │
-├── server/               # Backend (Node.js/Express)
-│   ├── models/          # MongoDB models
+├── backend/              # Backend (Node.js + Express)
+│   ├── routes/          # API route handlers
+│   │   ├── auth.js
+│   │   ├── appointments.js
+│   │   ├── doctors.js
+│   │   ├── medicalRecords.js
+│   │   └── queue.js
+│   ├── models/          # MongoDB schemas (Mongoose)
 │   │   ├── User.js
 │   │   ├── Appointment.js
+│   │   ├── MedicalRecord.js
 │   │   ├── Queue.js
 │   │   └── Department.js
-│   ├── routes/          # API routes
+│   ├── middleware/      # Express middleware
 │   │   └── auth.js
-│   ├── middleware/      # Custom middleware
-│   │   └── auth.js
-│   ├── controllers/     # Route controllers
+│   ├── controllers/     # Business logic
 │   ├── server.js        # Server entry point
 │   └── package.json
 │
+├── database/            # Database organization
+│   ├── schemas/        # Database models (reference)
+│   ├── seeders/        # Seed scripts
+│   └── migrations/     # Database migrations
+│
+├── start.sh            # Quick start script
 └── README.md
-```
+
+**See [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md) for detailed organization.**
 
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
 - Node.js (v18 or higher)
 - MongoDB (local or Atlas)
-- Redis (optional, for queue management)
 - npm or yarn
+
+### Quick Start
+
+```bash
+# Start both frontend and backend
+./start.sh
+```
+
+The script will automatically:
+- Check MongoDB connection
+- Start backend on port 5001
+- Start frontend on port 3000
+
+### Manual Installation
 
 ### 1. Clone the repository
 ```bash
-cd "demo mediflow"
+git clone https://github.com/iamroshanpatak/Medi_Flow-HMS.git
+cd Medi_Flow-HMS
 ```
 
 ### 2. Install dependencies
 
-**Frontend:**
+**Backend:**
 ```bash
-cd client
+cd backend
 npm install
 ```
 
-**Backend:**
+**Frontend:**
 ```bash
-cd ../server
+cd frontend
 npm install
 ```
 
 ### 3. Environment Configuration
 
-**Client (.env.local):**
+**Frontend (.env.local):**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5001
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 ```
 
-**Server (.env):**
+**Backend (.env):**
 ```env
-PORT=5000
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/mediflow
 JWT_SECRET=your_jwt_secret_key_change_in_production
 JWT_EXPIRE=7d
@@ -139,37 +165,31 @@ mongod
 
 ### 5. Run the application
 
-**Development mode:**
+**Using start script (Recommended):**
+```bash
+./start.sh
+```
+
+**Manual start:**
 
 Terminal 1 - Backend:
 ```bash
-cd server
+cd backend
 npm run dev
 ```
 
 Terminal 2 - Frontend:
 ```bash
-cd client
+cd frontend
 npm run dev
-```
-
-**Production mode:**
-```bash
-# Backend
-cd server
-npm start
-
-# Frontend
-cd client
-npm run build
-npm start
 ```
 
 ## 🌐 Access the Application
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **API Documentation**: http://localhost:5000/api-docs (coming soon)
+- **Backend API**: http://localhost:5001
+
+> **Note:** Backend uses port 5001 instead of 5000 to avoid conflicts with macOS AirPlay Receiver.
 
 ## 👥 User Roles & Features
 
