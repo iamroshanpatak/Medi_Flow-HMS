@@ -1,8 +1,8 @@
-# 🏥 MediFlow - Hospital Management System
+# MediFlow - Hospital Management System
 
 A modern, responsive web application for hospital management with real-time queue management, appointment booking, and role-based dashboards for patients, doctors, and administrators.
 
-## 📋 Project Overview
+## Project Overview
 
 MediFlow is a comprehensive hospital management system designed to:
 - Streamline patient care and reduce waiting times
@@ -12,7 +12,7 @@ MediFlow is a comprehensive hospital management system designed to:
 - Manage medical records and prescriptions
 - Support SMS/Email notifications for appointments
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **Next.js 15** - React framework with App Router
@@ -34,7 +34,7 @@ MediFlow is a comprehensive hospital management system designed to:
 - **Nodemailer** - Email notifications
 - **Twilio** - SMS notifications
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Medi_Flow/
@@ -184,16 +184,16 @@ cd frontend
 npm run dev
 ```
 
-## 🌐 Access the Application
+##  Access the Application
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5001
 
 > **Note:** Backend uses port 5001 instead of 5000 to avoid conflicts with macOS AirPlay Receiver.
 
-## 👥 User Roles & Features
+##  User Roles & Features
 
-### 🧑‍⚕️ Patient Features
+### Patient Features
 - Register and create profile
 - Book, reschedule, and cancel appointments
 - View appointment history
@@ -203,7 +203,7 @@ npm run dev
 - Receive SMS/Email notifications
 - Rate doctors and provide feedback
 
-### 👨‍⚕️ Doctor Features
+### Doctor Features
 - View daily schedule and appointments
 - Manage patient queue
 - Call next patient in queue
@@ -213,7 +213,7 @@ npm run dev
 - Track performance metrics
 - Manage availability and time slots
 
-### 🛠️ Admin Features
+### Admin Features
 - Dashboard with system overview
 - Manage users (patients, doctors, staff)
 - Monitor all appointments
@@ -223,7 +223,7 @@ npm run dev
 - System configuration
 - Queue monitoring across departments
 
-## 🔐 Authentication
+## Authentication
 
 The system uses JWT (JSON Web Tokens) for secure authentication:
 - Token-based authentication
@@ -232,7 +232,7 @@ The system uses JWT (JSON Web Tokens) for secure authentication:
 - Protected API routes
 - Session management
 
-## 📊 Key Features
+## Key Features
 
 ### 1. Real-Time Queue Management
 - Live queue updates using Socket.IO
@@ -262,50 +262,50 @@ The system uses JWT (JSON Web Tokens) for secure authentication:
 - Appointment reminders
 - Queue status updates
 
-## 🗓️ Development Roadmap
+## Development Roadmap
 
 Based on your 6-month plan:
 
-✅ **Month 1: Planning, Design & Base Setup** (COMPLETED)
-- ✅ Project structure created
-- ✅ Tech stack finalized
-- ✅ Database schema designed
-- ✅ UI wireframes implemented
-- ✅ Base authentication setup
+ **Month 1: Planning, Design & Base Setup** (COMPLETED)
+- Project structure created
+- Tech stack finalized
+- Database schema designed
+- UI wireframes implemented
+- Base authentication setup
 
-✅ **Month 2: Authentication & User Management** (COMPLETED)
-- ✅ User registration and login
-- ✅ Role management
-- ✅ Profile management
-- ✅ Admin user management
-- ✅ Protected routes
-- ✅ JWT authentication
+**Month 2: Authentication & User Management** (COMPLETED)
+- User registration and login
+- Role management
+- Profile management
+- Admin user management
+- Protected routes
+- JWT authentication
 
-📅 **Month 3: Appointment Booking System** (NEXT)
+**Month 3: Appointment Booking System** (NEXT)
 - Appointment booking
 - Reschedule and cancel
 - Doctor schedule setup
 - Appointment dashboard
 
-⏰ **Month 4: Queue Management**
+**Month 4: Queue Management**
 - Token generation
 - Real-time queue updates
 - Doctor queue dashboard
 - Walk-in integration
 
-🤖 **Month 5: Notifications, AI & Chatbot**
+**Month 5: Notifications, AI & Chatbot**
 - SMS/Email notifications
 - Basic AI recommendations
 - FAQ chatbot
 - NLP intent mapping
 
-🚀 **Month 6: Testing, Deployment & Launch**
+**Month 6: Testing, Deployment & Launch**
 - Integration testing
 - Load testing
 - Security audit
 - Production deployment
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests (to be implemented)
@@ -315,7 +315,7 @@ npm test
 npm run test:coverage
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Frontend (Vercel)
 ```bash
@@ -330,7 +330,7 @@ cd server
 # Follow platform-specific deployment guides
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -338,25 +338,25 @@ cd server
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License.
 
-## 👨‍💻 Author
+## Author
 
 Your Name - Hospital Management System Developer
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Next.js team for the amazing framework
 - MongoDB for the flexible database
 - Tailwind CSS for the utility-first CSS framework
 - All open-source contributors
 
-## 📞 Support
+## Support
 
 For support, email support@mediflow.com or join our Slack channel.
 
 ---
 
-**Built with ❤️ for better healthcare management**
+**Built with for better healthcare management**
