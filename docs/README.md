@@ -102,8 +102,7 @@ Quick lookup guide with common commands, useful links, and frequently needed inf
 
 ## 🔗 Links to Root Documentation
 
-- [README.md](../README.md) - Main project overview
-- [QUICK_START.md](../QUICK_START.md) - Installation and quick start guide
+- [README.md](../README.md) - Main project overview and quick start guide
 
 ## 📞 Support
 

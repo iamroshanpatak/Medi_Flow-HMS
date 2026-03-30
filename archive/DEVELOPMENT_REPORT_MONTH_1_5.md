@@ -976,7 +976,6 @@ Verify: User has permission to view appointments
 - [MONTH_2_COMPLETE.md](MONTH_2_COMPLETE.md) - Auth & User Management
 - [MONTH_3_COMPLETE.md](MONTH_3_COMPLETE.md) - Appointments
 - [MONTH_4_COMPLETE.md](MONTH_4_COMPLETE.md) - Queue Management
-- [MONTH_5_STATUS.md](MONTH_5_STATUS.md) - Current Month Status
-- [MONTH_5_TECHNICAL_BREAKDOWN.md](MONTH_5_TECHNICAL_BREAKDOWN.md) - Development Tasks
+- [MONTH_5_COMPLETE.md](MONTH_5_COMPLETE.md) - Month 5 Complete (Notifications, AI, Reminders)
 - [README.md](README.md) - Project Overview
 - [API_DOCUMENTATION.md](API_DOCUMENTATION.md) - Full API Reference
