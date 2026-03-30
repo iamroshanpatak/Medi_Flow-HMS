@@ -8,6 +8,12 @@ const {
   sendAppointmentCancellation,
   sendAppointmentReschedule,
 } = require('../utils/emailService');
+const {
+  sendAppointmentConfirmationSMS,
+  sendAppointmentCancellationSMS,
+  sendAppointmentRescheduleSMS,
+} = require('../utils/smsService');
+const cronService = require('../utils/cronService');
 
 // @route   GET /api/appointments
 // @desc    Get all appointments (filtered by role)
@@ -113,7 +119,7 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private (Patient)
 router.post('/', protect, authorize('patient'), async (req, res) => {
   try {
-    const { doctor, appointmentDate, startTime, endTime, reason, type } = req.body;
+    const { doctor, department, appointmentDate, startTime, endTime, reason, type } = req.body;
 
     // Validate doctor exists
     const doctorExists = await User.findById(doctor);
@@ -145,6 +151,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     const appointment = await Appointment.create({
       patient: req.user.id,
       doctor,
+      department: department || 'General Medicine',
       appointmentDate: new Date(appointmentDate),
       startTime,
       endTime,
@@ -166,6 +173,16 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
       startTime,
       endTime,
       reason,
+    });
+
+    // Send confirmation SMS
+    await sendAppointmentConfirmationSMS({
+      patientPhone: populatedAppointment.patient.phone,
+      patientName: `${populatedAppointment.patient.firstName} ${populatedAppointment.patient.lastName}`,
+      doctorName: `${populatedAppointment.doctor.firstName} ${populatedAppointment.doctor.lastName}`,
+      appointmentDate,
+      startTime,
+      endTime,
     });
 
     res.status(201).json({
@@ -276,6 +293,14 @@ router.put('/:id/cancel', protect, async (req, res) => {
       cancellationReason: req.body.reason,
     });
 
+    // Send cancellation SMS
+    await sendAppointmentCancellationSMS({
+      patientPhone: populatedAppointment.patient.phone,
+      patientName: `${populatedAppointment.patient.firstName} ${populatedAppointment.patient.lastName}`,
+      doctorName: `${populatedAppointment.doctor.firstName} ${populatedAppointment.doctor.lastName}`,
+      appointmentDate: populatedAppointment.appointmentDate,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Appointment cancelled successfully',
@@ -352,19 +377,6 @@ router.put('/:id/reschedule', protect, async (req, res) => {
     appointment.appointmentDate = new Date(appointmentDate);
     appointment.startTime = startTime;
     appointment.endTime = endTime;
-    // Send reschedule email
-    await sendAppointmentReschedule({
-      patientEmail: updatedAppointment.patient.email,
-      patientName: `${updatedAppointment.patient.firstName} ${updatedAppointment.patient.lastName}`,
-      doctorName: `${updatedAppointment.doctor.firstName} ${updatedAppointment.doctor.lastName}`,
-      oldDate: oldDate,
-      oldTime: oldStartTime,
-      newDate: appointmentDate,
-      newStartTime: startTime,
-      newEndTime: endTime,
-      reason: reason,
-    });
-
     appointment.status = 'rescheduled';
     appointment.rescheduledBy = req.user.id;
     appointment.rescheduledAt = Date.now();
@@ -378,6 +390,30 @@ router.put('/:id/reschedule', protect, async (req, res) => {
     const updatedAppointment = await Appointment.findById(appointment._id)
       .populate('patient', 'firstName lastName email phone')
       .populate('doctor', 'firstName lastName specialization email');
+
+    // Send reschedule email
+    await sendAppointmentReschedule({
+      patientEmail: updatedAppointment.patient.email,
+      patientName: `${updatedAppointment.patient.firstName} ${updatedAppointment.patient.lastName}`,
+      doctorName: `${updatedAppointment.doctor.firstName} ${updatedAppointment.doctor.lastName}`,
+      oldDate: oldDate,
+      oldTime: oldStartTime,
+      newDate: appointmentDate,
+      newStartTime: startTime,
+      newEndTime: endTime,
+      reason: reason,
+    });
+
+    // Send reschedule SMS
+    await sendAppointmentRescheduleSMS({
+      patientPhone: updatedAppointment.patient.phone,
+      patientName: `${updatedAppointment.patient.firstName} ${updatedAppointment.patient.lastName}`,
+      doctorName: `${updatedAppointment.doctor.firstName} ${updatedAppointment.doctor.lastName}`,
+      oldDate: oldDate,
+      newDate: appointmentDate,
+      newStartTime: startTime,
+      newEndTime: endTime,
+    });
 
     res.status(200).json({
       success: true,
@@ -462,6 +498,44 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Appointment deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   POST /api/appointments/cron/trigger-reminders
+// @desc    Manually trigger reminder check (Admin only)
+// @access  Private (Admin)
+router.post('/cron/trigger-reminders', protect, authorize('admin'), async (req, res) => {
+  try {
+    await cronService.triggerReminderCheck();
+
+    res.status(200).json({
+      success: true,
+      message: 'Reminder check triggered successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   GET /api/appointments/cron/status
+// @desc    Get cron job status and statistics (Admin only)
+// @access  Private (Admin)
+router.get('/cron/status', protect, authorize('admin'), async (req, res) => {
+  try {
+    const cronStatus = await cronService.getCronStatus();
+
+    res.status(200).json({
+      success: true,
+      data: cronStatus,
     });
   } catch (error) {
     res.status(500).json({

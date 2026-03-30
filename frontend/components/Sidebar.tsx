@@ -36,6 +36,7 @@ const menuItems = {
   doctor: [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/doctor/dashboard', gradient: 'from-emerald-500 to-teal-500' },
     { icon: Calendar, label: 'Appointments', href: '/doctor/appointments', gradient: 'from-blue-500 to-cyan-500' },
+    { icon: Clock, label: 'My Schedule', href: '/doctor/schedule', gradient: 'from-cyan-500 to-blue-500' },
     { icon: Clock, label: 'Queue Management', href: '/doctor/queue', gradient: 'from-orange-500 to-amber-500' },
     { icon: Users, label: 'Patients', href: '/doctor/patients', gradient: 'from-purple-500 to-pink-500' },
     { icon: FileText, label: 'Medical Records', href: '/doctor/medical-records', gradient: 'from-indigo-500 to-blue-500' },

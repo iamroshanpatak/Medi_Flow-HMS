@@ -89,6 +89,18 @@ const appointmentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Scheduled reminder tracking (24 hours before)
+    reminder_24h_sent: {
+      type: Boolean,
+      default: false,
+    },
+    reminder_24h_sent_at: Date,
+    // Scheduled reminder tracking (1 hour before)
+    reminder_1h_sent: {
+      type: Boolean,
+      default: false,
+    },
+    reminder_1h_sent_at: Date,
     rating: {
       type: Number,
       min: 1,
@@ -106,5 +118,10 @@ const appointmentSchema = new mongoose.Schema(
 appointmentSchema.index({ patient: 1, appointmentDate: -1 });
 appointmentSchema.index({ doctor: 1, appointmentDate: -1 });
 appointmentSchema.index({ status: 1 });
+// Indexes for reminder queries
+appointmentSchema.index({ appointmentDate: 1, reminder_24h_sent: 1 });
+appointmentSchema.index({ appointmentDate: 1, reminder_1h_sent: 1 });
+appointmentSchema.index({ appointmentDate: 1, status: 1, reminder_24h_sent: 1 });
+appointmentSchema.index({ appointmentDate: 1, status: 1, reminder_1h_sent: 1 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

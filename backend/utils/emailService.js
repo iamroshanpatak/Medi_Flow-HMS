@@ -5,7 +5,7 @@ const createTransporter = () => {
   // For development, use Ethereal email (fake SMTP service)
   // For production, use real SMTP credentials from environment variables
   if (process.env.NODE_ENV === 'production') {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT || 587,
       secure: false, // true for 465, false for other ports
@@ -16,7 +16,7 @@ const createTransporter = () => {
     });
   } else {
     // Development mode - log to console
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,

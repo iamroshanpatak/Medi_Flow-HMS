@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const cronService = require('./utils/cronService');
 
 dotenv.config();
 
@@ -24,7 +25,11 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected successfully'))
+  .then(() => {
+    console.log('✅ MongoDB connected successfully');
+    // Initialize cron jobs after successful MongoDB connection
+    cronService.initCronJobs();
+  })
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // Socket.IO for real-time queue updates
@@ -69,6 +74,10 @@ const doctorRoutes = require('./routes/doctors');
 const queueRoutes = require('./routes/queue');
 const medicalRecordsRoutes = require('./routes/medicalRecords');
 const userRoutes = require('./routes/users');
+const aiRoutes = require('./routes/aiRoutes');
+const nlpRoutes = require('./routes/nlpRoutes');
+const recommendationsRoutes = require('./routes/recommendationsRoutes');
+const statusRoutes = require('./routes/status');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -77,6 +86,10 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/medical-records', medicalRecordsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/nlp', nlpRoutes);
+app.use('/api/recommendations', recommendationsRoutes);
+app.use('/api', statusRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -93,6 +106,27 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.IO ready for real-time updates`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('📛 SIGTERM signal received: closing HTTP server');
+  cronService.stopCronJobs();
+  httpServer.close(() => {
+    console.log('✅ HTTP server closed');
+    mongoose.connection.close();
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('📛 SIGINT signal received: closing HTTP server');
+  cronService.stopCronJobs();
+  httpServer.close(() => {
+    console.log('✅ HTTP server closed');
+    mongoose.connection.close();
+    process.exit(0);
+  });
 });
 
 module.exports = { app, io };
