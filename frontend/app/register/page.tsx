@@ -97,7 +97,18 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(formData);
+      // Only send the fields that the backend expects
+      const registrationData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        role: formData.role,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        gender: formData.gender || undefined,
+      };
+      await register(registrationData);
       setSuccess(true);
     } catch (err: unknown) {
       const error = err as Error;

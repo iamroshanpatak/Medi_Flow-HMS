@@ -23,9 +23,8 @@ interface RegisterData {
   password: string;
   phone?: string;
   role?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  [key: string]: unknown;
+  dateOfBirth?: string | undefined;
+  gender?: string | undefined;
 }
 
 interface UpdateProfileData {
@@ -98,6 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
+      console.log('Registering user with data:', {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        gender: data.gender,
+      });
+
       const response = await authAPI.register(data);
       const { token, user } = response.data;
 
