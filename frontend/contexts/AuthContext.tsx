@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token) {
         try {
           const response = await authAPI.getProfile();
-          setUser(response.data.user);
+          setUser(response.data.data);
         } catch (error) {
           console.error('Failed to load user:', error);
           localStorage.removeItem('token');
@@ -78,6 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authAPI.login({ email, password });
       const { token, user } = response.data;
 
+      if (!token || !user) {
+        throw new Error('Invalid response from server: missing token or user data');
+      }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
@@ -85,8 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on role
       router.push(`/${user.role}/dashboard`);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      throw new Error(err.response?.data?.message || 'Login failed');
+      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
+      console.error('Login error:', errorMessage, error);
+      throw new Error(errorMessage);
     }
   };
 
@@ -95,6 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authAPI.register(data);
       const { token, user } = response.data;
 
+      if (!token || !user) {
+        throw new Error('Invalid response from server: missing token or user data');
+      }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
@@ -102,8 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on role
       router.push(`/${user.role}/dashboard`);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      throw new Error(err.response?.data?.message || 'Registration failed');
+      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
+      const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
+      console.error('Registration error:', errorMessage, error);
+      throw new Error(errorMessage);
     }
   };
 
@@ -117,11 +129,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: UpdateProfileData) => {
     try {
       const response = await authAPI.updateProfile(data);
-      setUser(response.data.user);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.data);
+      localStorage.setItem('user', JSON.stringify(response.data.data));
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      throw new Error(err.response?.data?.message || 'Profile update failed');
+      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
+      const errorMessage = err.response?.data?.message || err.message || 'Profile update failed';
+      console.error('Profile update error:', errorMessage, error);
+      throw new Error(errorMessage);
     }
   };
 
