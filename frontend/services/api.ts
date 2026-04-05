@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Add token to requests
@@ -23,20 +24,43 @@ api.interceptors.request.use(
   }
 );
 
-// Handle response errors
+// Handle response errors with better messages
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle network errors
+    if (!error.response) {
+      const networkError = new Error(
+        `Network Error: Cannot connect to backend at ${API_URL}. Make sure the server is running on port 5000.`
+      );
+      (networkError as any).isNetworkError = true;
+      (networkError as any).originalError = error;
+      return Promise.reject(networkError);
+    }
+
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );
 
 export default api;
+
+// Check if backend is reachable
+export const checkBackendHealth = async () => {
+  try {
+    const response = await api.get('/api/status/health', { timeout: 5000 });
+    return response.status === 200;
+  } catch (error) {
+    console.error('Backend health check failed:', error);
+    return false;
+  }
+};
 
 // Auth API
 export const authAPI = {

@@ -88,9 +88,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on role
       router.push(`/${user.role}/dashboard`);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
-      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
-      console.error('Login error:', errorMessage, error);
+      const err = error as any;
+      
+      // Better error message handling
+      let errorMessage = 'Login failed';
+      
+      if (err.isNetworkError) {
+        errorMessage = `🔴 Backend Not Running: ${err.message}`;
+      } else if (err.code === 'ECONNREFUSED') {
+        errorMessage = '🔴 Cannot connect to backend. Make sure backend is running on port 5000';
+      } else if (err.response?.status === 401) {
+        errorMessage = '❌ Invalid email or password';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      console.error('Login error:', {
+        message: errorMessage,
+        errorCode: err.code,
+        statusCode: err.response?.status,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+        errorDetails: err.response?.data || err.message || 'Unknown error',
+      });
+      
       throw new Error(errorMessage);
     }
   };
@@ -120,9 +142,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on role
       router.push(`/${user.role}/dashboard`);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
-      const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
-      console.error('Registration error:', errorMessage, error);
+      const err = error as any;
+      
+      // Better error message handling
+      let errorMessage = 'Registration failed';
+      
+      if (err.isNetworkError) {
+        errorMessage = `🔴 Backend Not Running: ${err.message}`;
+      } else if (err.code === 'ECONNREFUSED') {
+        errorMessage = '🔴 Cannot connect to backend. Make sure backend is running on port 5000';
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || '❌ Invalid registration data. Email may already exist.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      console.error('Registration error:', {
+        message: errorMessage,
+        errorCode: err.code,
+        statusCode: err.response?.status,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+        errorDetails: err.response?.data || err.message || 'Unknown error',
+      });
+      
       throw new Error(errorMessage);
     }
   };
@@ -140,9 +184,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.data.data);
       localStorage.setItem('user', JSON.stringify(response.data.data));
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } | any; message?: string };
-      const errorMessage = err.response?.data?.message || err.message || 'Profile update failed';
-      console.error('Profile update error:', errorMessage, error);
+      const err = error as any;
+      
+      // Better error message handling
+      let errorMessage = 'Profile update failed';
+      
+      if (err.isNetworkError) {
+        errorMessage = `🔴 Backend Not Running: ${err.message}`;
+      } else if (err.code === 'ECONNREFUSED') {
+        errorMessage = '🔴 Cannot connect to backend. Make sure backend is running on port 5000';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      console.error('Profile update error:', {
+        message: errorMessage,
+        errorCode: err.code,
+        statusCode: err.response?.status,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+        errorDetails: err.response?.data || err.message || 'Unknown error',
+      });
+      
       throw new Error(errorMessage);
     }
   };
