@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+build
+dist
+.git
+coverage
+public
+*.config.js
+*.config.mjs
+*.config.ts
+.env*.local
+*.min.js

@@ -1,0 +1,27 @@
+.progressBar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: width 0.5s ease-in-out;
+}
+
+.progressBar_0 { width: 0%; }
+.progressBar_5 { width: 5%; }
+.progressBar_10 { width: 10%; }
+.progressBar_15 { width: 15%; }
+.progressBar_20 { width: 20%; }
+.progressBar_25 { width: 25%; }
+.progressBar_30 { width: 30%; }
+.progressBar_35 { width: 35%; }
+.progressBar_40 { width: 40%; }
+.progressBar_45 { width: 45%; }
+.progressBar_50 { width: 50%; }
+.progressBar_55 { width: 55%; }
+.progressBar_60 { width: 60%; }
+.progressBar_65 { width: 65%; }
+.progressBar_70 { width: 70%; }
+.progressBar_75 { width: 75%; }
+.progressBar_80 { width: 80%; }
+.progressBar_85 { width: 85%; }
+.progressBar_90 { width: 90%; }
+.progressBar_95 { width: 95%; }
+.progressBar_100 { width: 100%; }

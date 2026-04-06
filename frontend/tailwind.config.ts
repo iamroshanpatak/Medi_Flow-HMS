@@ -1,11 +1,14 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Specific content patterns for faster scanning
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.css",
   ],
+  // Disable dynamic class names for better performance
+  safelist: [],
   theme: {
     extend: {
       colors: {

@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Toast, { ToastType } from '@/components/Toast';
 import AppointmentCalendar from '@/components/AppointmentCalendar';
+import AIRecommendationsPanelEnhanced from '@/components/AIRecommendationsPanelEnhanced';
 import { appointmentsAPI, doctorsAPI } from '@/services/api';
 import { Calendar, Clock, User, FileText, X, AlertCircle, RefreshCw, List, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
@@ -214,6 +215,11 @@ export default function AppointmentsPage() {
                 >
                   Book New Appointment
                 </Link>
+              </div>
+
+              {/* AI Recommendations Panel */}
+              <div className="mb-8">
+                <AIRecommendationsPanelEnhanced />
               </div>
 
               {/* Filters */}

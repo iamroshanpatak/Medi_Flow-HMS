@@ -122,3 +122,22 @@ export const medicalRecordsAPI = {
   delete: (id: string) => api.delete(`/api/medical-records/${id}`),
   getPatientSummary: (patientId: string) => api.get(`/api/medical-records/patient/${patientId}/summary`),
 };
+
+// AI Recommendations API
+export const recommendationsAPI = {
+  generateRecommendations: (params?: any) => api.get('/api/recommendations/generate', { params }),
+  getHealthScore: () => api.get('/api/recommendations/health-score'),
+  getActionPlan: () => api.get('/api/recommendations/action-plan'),
+  getRiskAssessment: () => api.get('/api/recommendations/risk-assessment'),
+  getScreeningRecommendations: () => api.get('/api/recommendations/screenings'),
+  getLifestyleRecommendations: () => api.get('/api/recommendations/lifestyle'),
+  getHealthInsights: () => api.get('/api/recommendations/insights'),
+};
+
+// AI Triage & Analysis API
+export const aiAPI = {
+  triage: (symptoms: string[]) => api.post('/api/ai/triage', { symptoms }),
+  predictWaitTime: (department: string, queuePosition: number, activeConsultations?: number) =>
+    api.post('/api/ai/waittime', { department, queuePosition, activeConsultations }),
+  askFAQ: (message: string) => api.post('/api/ai/faq', { message }),
+};

@@ -1,0 +1,11 @@
+{
+  "watch": ["server.js", "controllers", "routes", "middleware", "models", "ai", "utils"],
+  "ignore": ["node_modules", "tests", "*.log", ".env", ".DS_Store"],
+  "ext": "js",
+  "delay": 1000,
+  "quiet": true,
+  "verbose": false,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
