@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Hospital, Menu, X, Bell, User, Settings, LogOut, UserCircle, Edit, Mail, Phone, Calendar, CheckCircle } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import Toast from './Toast';
+import LanguageSelector from './LanguageSelector';
 
 interface NavbarProps {
   user?: {
@@ -31,6 +33,7 @@ interface Notification {
 }
 
 export default function Navbar({ user }: NavbarProps) {
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -156,25 +159,25 @@ export default function Navbar({ user }: NavbarProps) {
                   href="/"
                   className="text-white/90 hover:text-white font-medium transition"
                 >
-                  Home
+                  {t('nav.home')}
                 </Link>
                 <Link
                   href="/about"
                   className="text-white/90 hover:text-white font-medium transition"
                 >
-                  About
+                  {t('nav.about')}
                 </Link>
                 <Link
                   href="/services"
                   className="text-white/90 hover:text-white font-medium transition"
                 >
-                  Services
+                  {t('nav.services')}
                 </Link>
                 <Link
                   href="/contact"
                   className="text-white/90 hover:text-white font-medium transition"
                 >
-                  Contact
+                  {t('nav.contact')}
                 </Link>
               </>
             )}
@@ -203,7 +206,7 @@ export default function Navbar({ user }: NavbarProps) {
                   {showNotifications && (
                     <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-in">
                       <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3">
-                        <h3 className="text-white font-semibold">Notifications</h3>
+                        <h3 className="text-white font-semibold">{t('nav.notifications')}</h3>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
                         {notifications.length > 0 ? (
@@ -247,6 +250,9 @@ export default function Navbar({ user }: NavbarProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Language Selector */}
+                <LanguageSelector />
 
                 {/* User Profile Dropdown */}
                 <div className="relative" ref={userMenuRef}>
@@ -339,7 +345,7 @@ export default function Navbar({ user }: NavbarProps) {
                           className="w-full px-4 py-2.5 text-left text-gray-700 hover:bg-blue-50 transition-colors flex items-center space-x-3 group"
                         >
                           <Settings className="h-4 w-4 text-gray-500 group-hover:text-blue-600" />
-                          <span className="text-sm font-medium">Dashboard</span>
+                          <span className="text-sm font-medium">{t('nav.dashboard')}</span>
                         </button>
                       </div>
 
@@ -350,7 +356,7 @@ export default function Navbar({ user }: NavbarProps) {
                           className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 transition-colors flex items-center space-x-3 group"
                         >
                           <LogOut className="h-4 w-4" />
-                          <span className="text-sm font-medium">Logout</span>
+                          <span className="text-sm font-medium">{t('nav.logout')}</span>
                         </button>
                       </div>
                     </div>
@@ -410,7 +416,7 @@ export default function Navbar({ user }: NavbarProps) {
                   className="w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                 >
                   <Bell className="h-5 w-5" />
-                  <span>Notifications</span>
+                  <span>{t('nav.notifications')}</span>
                   {unreadCount > 0 && (
                     <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
                       {unreadCount}
@@ -434,14 +440,14 @@ export default function Navbar({ user }: NavbarProps) {
                   className="w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                 >
                   <Edit className="h-5 w-5" />
-                  <span>Edit Profile</span>
+                  <span>{t('nav.edit_profile')}</span>
                 </button>
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-3 py-2 rounded-md text-red-600 hover:bg-red-50 flex items-center space-x-2"
                 >
                   <LogOut className="h-5 w-5" />
-                  <span>Logout</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </>
             ) : (
@@ -450,37 +456,37 @@ export default function Navbar({ user }: NavbarProps) {
                   href="/"
                   className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                 >
-                  Home
+                  {t('nav.home')}
                 </Link>
                 <Link
                   href="/about"
                   className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                 >
-                  About
+                  {t('nav.about')}
                 </Link>
                 <Link
                   href="/services"
                   className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                 >
-                  Services
+                  {t('nav.services')}
                 </Link>
                 <Link
                   href="/contact"
                   className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                 >
-                  Contact
+                  {t('nav.contact')}
                 </Link>
                 <Link
                   href="/login"
                   className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
                 >
-                  Login
+                  {t('nav.login')}
                 </Link>
                 <Link
                   href="/register"
                   className="block px-3 py-2 rounded-md bg-blue-600 text-white text-center hover:bg-blue-700"
                 >
-                  Register
+                  {t('nav.register')}
                 </Link>
               </>
             )}

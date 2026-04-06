@@ -1,32 +1,23 @@
-# Dependencies and build artifacts
+# Nodemon Ignore Patterns
+
 node_modules
 .next
 build
 dist
 coverage
-
-# Environment and config
 .env
 .env.*.local
 .git
 .gitignore
-
-# OS
 .DS_Store
 Thumbs.db
 *.log
-
-# IDE
 .vscode
 .idea
 *.swp
 *.swo
-
-# Tests
 tests
 *.test.js
 *.spec.js
-
-# Documentation
 docs
 README.md

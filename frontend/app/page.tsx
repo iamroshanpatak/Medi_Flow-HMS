@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Hospital, Calendar, Users, Activity, Clock, Shield, Stethoscope, HeartPulse, Ambulance, UserPlus, LogIn, Phone, Mail, ChevronDown } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Home() {
+  const { t } = useTranslation();
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -90,7 +92,7 @@ export default function Home() {
             
             <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
               <button onClick={scrollToTop} className="text-gray-700 hover:text-blue-600 font-medium transition text-sm lg:text-base whitespace-nowrap">
-                Home
+                {t('nav.home')}
               </button>
               <a href="#features" className="text-gray-700 hover:text-blue-600 font-medium transition cursor-pointer text-sm lg:text-base whitespace-nowrap">
                 Features

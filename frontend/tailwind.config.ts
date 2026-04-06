@@ -7,8 +7,6 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./app/**/*.css",
   ],
-  // Disable dynamic class names for better performance
-  safelist: [],
   theme: {
     extend: {
       colors: {

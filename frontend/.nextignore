@@ -1,35 +1,24 @@
-# Build and dependencies
+# Next.js Build Artifacts
+
 node_modules
 .npm
 .git
 .gitignore
-
-# OS
 .DS_Store
 Thumbs.db
 *.log
-
-# IDE
 .vscode
 .idea
 *.swp
 *.swo
-
-# Documentation
 docs
 README.md
 LICENSE
-
-# Archives & backups
 *.zip
 *.tar.gz
 *.bak
-
-# Tests (if any)
 coverage
 .jest
-
-# Environment
 .env
 .env.*.local
 .cache

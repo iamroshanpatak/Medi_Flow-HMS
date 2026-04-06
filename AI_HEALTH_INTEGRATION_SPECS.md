@@ -1,3 +1,5 @@
+# Integrated AI Health System - Implementation Guide
+
 ╔══════════════════════════════════════════════════════════════════════╗
 ║          INTEGRATED AI HEALTH SYSTEM - IMPLEMENTATION GUIDE           ║
 ║        Auto Doctor Booking + Health Graph + Action Plan               ║
@@ -11,35 +13,35 @@ a seamless workflow:
 1️⃣  AI HEALTH ANALYSIS
    └─ Patient enters symptoms
    └─ AI analyzes and determines:
-      * Recommended department/specialization
-      * Health severity level (critical/high/moderate/low)
-      * Matched symptoms
-      * Confidence level
+      - Recommended department is analyzed
+      - Health severity level determined (critical/high/moderate/low)
+      - Matched symptoms documented
+      - Confidence level provided
 
 2️⃣  AUTOMATIC DOCTOR BOOKING
    └─ System finds available doctor in recommended department
    └─ Books appointment based on urgency:
-      * CRITICAL → 09:00 (earliest)
-      * HIGH → 10:00
-      * MODERATE/LOW → 10:00+
+      - CRITICAL scheduled at 09:00 (earliest)
+      - HIGH scheduled at 10:00
+      - MODERATE/LOW scheduled at 10:00+
    └─ Creates appointment with reason based on symptoms
    └─ Shows confirmation with doctor details
 
 3️⃣  HEALTH GRAPH (Renamed from Trends)
    └─ Displays 28-day health projection
    └─ Adjusted based on current symptom severity:
-      * CRITICAL: -15 points impact
-      * HIGH: -10 points
-      * MODERATE: -5 points
-      * LOW: No significant impact
+      - CRITICAL: minus 15 points impact
+      - HIGH: minus 10 points
+      - MODERATE: minus 5 points
+      - LOW: No significant impact
    └─ Shows recovery trend line
 
 4️⃣  ACTION PLAN
    └─ Auto-redirects after booking
    └─ Shows doctor appointment details:
-      * Doctor name & specialization
-      * Appointment date & time
-      * Condition being treated
+      - Doctor name and specialization listed
+      - Appointment date and time provided
+      - Condition being treated specified
    └─ Displays personalized action steps
    └─ Recovery timeline
 

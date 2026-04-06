@@ -29,6 +29,7 @@ export default function RegisterPage() {
     bsYear: '',
     bsMonth: '',
     bsDay: '',
+    gender: '',
     role: 'patient',
     // Patient specific
     bloodGroup: '',
