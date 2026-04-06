@@ -91,6 +91,9 @@ export const doctorsAPI = {
   getAvailability: (id: string, date: string) => api.get(`/api/doctors/${id}/availability`, { params: { date } }),
   updateAvailability: (id: string, availability: any) => api.put(`/api/doctors/${id}/availability`, { availability }),
   getAppointments: (id: string, params?: any) => api.get(`/api/doctors/${id}/appointments`, { params }),
+  getPatients: (id: string) => api.get(`/api/doctors/${id}/patients`),
+  getAnalytics: (id: string) => api.get(`/api/doctors/${id}/analytics`),
+  getQueueStats: (id: string) => api.get(`/api/doctors/${id}/queue-stats`),
   getSpecializations: () => api.get('/api/doctors/meta/specializations'),
 };
 

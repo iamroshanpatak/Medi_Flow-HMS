@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { getFaqAnswer } from "@/services";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: number;
@@ -11,15 +12,35 @@ interface Message {
   text: string;
 }
 
-const QUICK_QUESTIONS = [
-  "What are OPD hours?",
-  "What documents do I need?",
-  "How do I book an appointment?",
-  "How much is the fee?",
-  "Where is my queue number?",
-];
+// Role-based quick questions
+const getQuickQuestions = (role?: string): string[] => {
+  if (role === "doctor") {
+    return [
+      "What is the current wait time?",
+      "Show me patient queue",
+      "How many appointments today?",
+      "What is the average consultation time?",
+    ];
+  } else if (role === "admin") {
+    return [
+      "Show system statistics",
+      "Generate daily report",
+      "List total users",
+      "Show appointment analytics",
+    ];
+  }
+  // Default patient questions
+  return [
+    "What are OPD hours?",
+    "What documents do I need?",
+    "How do I book an appointment?",
+    "How much is the fee?",
+    "Where is my queue number?",
+  ];
+};
 
 export default function FaqChatbot() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: 0, from: "bot", text: "Hello! I am MediFlow Assistant. How can I help you today?" }
@@ -27,6 +48,7 @@ export default function FaqChatbot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [quickQuestions] = useState(() => getQuickQuestions(user?.role));
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,7 +115,7 @@ export default function FaqChatbot() {
           {/* Quick questions */}
           {messages.length <= 1 && (
             <div className="px-3 pb-2 flex flex-wrap gap-1">
-              {QUICK_QUESTIONS.map(q => (
+              {quickQuestions.map(q => (
                 <button key={q} onClick={() => sendMessage(q)} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-100 transition">
                   {q}
                 </button>

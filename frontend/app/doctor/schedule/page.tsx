@@ -31,8 +31,13 @@ export default function DoctorSchedulePage() {
 
   const fetchAvailability = async () => {
     try {
-      const response = await doctorsAPI.getById(user?.id || '');
-      const doctorAvailability = response.data.data.availability || [];
+      setLoading(true);
+      if (!user?.id) {
+        throw new Error('User ID not available');
+      }
+      
+      const response = await doctorsAPI.getById(user.id);
+      const doctorAvailability = response.data.data?.availability || [];
       
       // Initialize all days if not present
       const allDaysAvailability = DAYS_OF_WEEK.map(day => {
@@ -41,9 +46,25 @@ export default function DoctorSchedulePage() {
       });
       
       setAvailability(allDaysAvailability);
-    } catch (error) {
-      console.error('Failed to fetch availability:', error);
-      setToast({ message: 'Failed to load schedule', type: 'error' });
+    } catch (error: any) {
+      // 404 is expected for new doctor profiles - log as debug only
+      if (error.response?.status !== 404) {
+        console.error('Failed to fetch availability:', error);
+      }
+      
+      // Initialize with empty slots for all days if fetch fails
+      const defaultAvailability = DAYS_OF_WEEK.map(day => ({
+        day,
+        slots: []
+      }));
+      setAvailability(defaultAvailability);
+      
+      // Show info if 404 (expected), warning for other issues
+      if (error.response?.status === 404) {
+        setToast({ message: 'Doctor profile not found. You can set up your schedule below.', type: 'success' });
+      } else if (error.message) {
+        setToast({ message: 'Note: Using default schedule. Changes will be saved.', type: 'success' });
+      }
     } finally {
       setLoading(false);
     }

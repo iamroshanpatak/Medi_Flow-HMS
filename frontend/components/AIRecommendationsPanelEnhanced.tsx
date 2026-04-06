@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { recommendationsAPI, aiAPI, doctorsAPI, appointmentsAPI } from '@/services/api';
 import { AlertCircle, CheckCircle, RefreshCw, Zap, Target, Heart, TrendingUp, Activity, Apple, Brain, AlertTriangle, Calendar, Download } from 'lucide-react';
 import Toast, { ToastType } from './Toast';
@@ -73,7 +74,127 @@ const HEALTH_TREND_DATA: HealthTrend[] = [
   { date: 'Day 28', score: 72, fitness: 62, nutrition: 75, mental: 75 },
 ];
 
+// Role-based initial recommendations
+const getRoleBasedRecommendations = (role?: string): RecommendationsData => {
+  if (role === 'doctor') {
+    return {
+      recommendations: [
+        {
+          recommendation: 'Review pending appointment requests from patients',
+          priority: 'high',
+          reason: 'Multiple patients waiting for doctor availability',
+          actionSteps: ['Check appointment requests', 'Confirm availability', 'Update schedule'],
+          estimatedImpact: 'Improve patient satisfaction by 25%'
+        },
+        {
+          recommendation: 'Analyze patient wait times for optimization',
+          priority: 'medium',
+          reason: 'Current average wait time is 15 minutes higher than target',
+          actionSteps: ['Review daily schedule', 'Identify bottlenecks', 'Adjust time slots'],
+          estimatedImpact: 'Reduce wait time by 20%'
+        },
+        {
+          recommendation: 'Update patient medical records',
+          priority: 'medium',
+          reason: 'Several patient records need follow-up updates',
+          actionSteps: ['Review recent appointments', 'Update medications', 'Add clinical notes'],
+          estimatedImpact: 'Ensure medical records accuracy'
+        }
+      ],
+      healthScore: 85,
+      riskFactors: ['High patient load', 'Schedule conflicts'],
+      priority: 'Optimize daily workflow and patient care',
+      generatedAt: new Date().toISOString(),
+      nextReviewDate: new Date(Date.now() + 86400000).toISOString(),
+      actionPlan: [
+        {
+          goal: 'Reduce appointment wait time',
+          timeline: '1 week',
+          steps: ['Review current schedule', 'Adjust consultation duration', 'Monitor results']
+        }
+      ]
+    };
+  } else if (role === 'admin') {
+    return {
+      recommendations: [
+        {
+          recommendation: 'Review system health and performance metrics',
+          priority: 'high',
+          reason: 'Weekly system audit scheduled',
+          actionSteps: ['Check database performance', 'Review API response times', 'Check error logs'],
+          estimatedImpact: 'Ensure system reliability'
+        },
+        {
+          recommendation: 'Manage user access and permissions',
+          priority: 'medium',
+          reason: 'New staff members need system access',
+          actionSteps: ['Review access requests', 'Assign appropriate roles', 'Update security groups'],
+          estimatedImpact: 'Improve security posture'
+        },
+        {
+          recommendation: 'Generate monthly analytics report',
+          priority: 'medium',
+          reason: 'Monthly reporting deadline approaching',
+          actionSteps: ['Compile usage statistics', 'Analyze trends', 'Create visualization'],
+          estimatedImpact: 'Identify improvement areas'
+        }
+      ],
+      healthScore: 92,
+      riskFactors: ['Storage usage', 'Active user growth'],
+      priority: 'Maintain system stability and security',
+      generatedAt: new Date().toISOString(),
+      nextReviewDate: new Date(Date.now() + 604800000).toISOString(),
+      actionPlan: [
+        {
+          goal: 'Optimize database performance',
+          timeline: '2 weeks',
+          steps: ['Run performance tests', 'Index optimization', 'Cache configuration']
+        }
+      ]
+    };
+  }
+  // Default patient recommendations
+  return {
+    recommendations: [
+      {
+        recommendation: 'Increase daily exercise to 30 minutes',
+        priority: 'high',
+        reason: 'Low fitness score detected from recent health assessment',
+        actionSteps: ['Start with brisk walking', 'Gradually increase intensity', 'Track progress daily'],
+        estimatedImpact: 'Improve fitness score by 15-20%'
+      },
+      {
+        recommendation: 'Improve sleep quality and consistency',
+        priority: 'high',
+        reason: 'Sleep patterns show inconsistency',
+        actionSteps: ['Set fixed sleep schedule', 'Reduce screen time', 'Create relaxing bedtime routine'],
+        estimatedImpact: 'Increase sleep quality score by 25%'
+      },
+      {
+        recommendation: 'Schedule preventive health checkup',
+        priority: 'medium',
+        reason: 'Annual checkup not performed in the last 6 months',
+        actionSteps: ['Book appointment', 'Prepare medical history', 'Complete lab work'],
+        estimatedImpact: 'Detect early health issues'
+      }
+    ],
+    healthScore: 72,
+    riskFactors: ['Low physical activity', 'Irregular sleep patterns', 'Stress levels'],
+    priority: 'Improve overall wellness',
+    generatedAt: new Date().toISOString(),
+    nextReviewDate: new Date(Date.now() + 604800000).toISOString(),
+    actionPlan: [
+      {
+        goal: 'Achieve health score of 85+',
+        timeline: 'Next 30 days',
+        steps: ['Daily exercise 30 mins', 'Sleep 8 hours', 'Weekly health check']
+      }
+    ]
+  };
+};
+
 export default function AIRecommendationsPanel() {
+  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<RecommendationsData | null>(null);
   const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,8 +216,20 @@ export default function AIRecommendationsPanel() {
   const [symptomTrendData, setSymptomTrendData] = useState<HealthTrend[]>(HEALTH_TREND_DATA);
 
   useEffect(() => {
-    loadAllData();
-  }, []);
+    // Use role-based recommendations if user is doctor or admin
+    if (user?.role === 'doctor' || user?.role === 'admin') {
+      setRecommendations(getRoleBasedRecommendations(user?.role));
+      setHealthScore({
+        score: getRoleBasedRecommendations(user?.role).healthScore,
+        status: 'Healthy',
+        trend: 'improving'
+      });
+      setLoading(false);
+    } else {
+      // For patients, load from API
+      loadAllData();
+    }
+  }, [user?.role]);
 
   const loadAllData = async () => {
     setLoading(true);

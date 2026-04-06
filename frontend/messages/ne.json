@@ -96,7 +96,8 @@
     "download": "डाउनलोड गर्नुहोस्",
     "upload": "अपलोड गर्नुहोस्",
     "last_updated": "अन्तिम अपडेट:",
-    "next_review": "अगले समीक्षा:"
+    "next_review": "अगले समीक्षा:",
+    "total": "कुल"
   },
   "messages": {
     "welcome": "MediFlow मा स्वागत छ",

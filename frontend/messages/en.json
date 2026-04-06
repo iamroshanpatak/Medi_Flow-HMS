@@ -96,7 +96,8 @@
     "download": "Download",
     "upload": "Upload",
     "last_updated": "Last updated:",
-    "next_review": "Next review:"
+    "next_review": "Next review:",
+    "total": "Total"
   },
   "messages": {
     "welcome": "Welcome to MediFlow",

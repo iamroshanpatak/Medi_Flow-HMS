@@ -38,32 +38,95 @@ export default function Navbar({ user }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(() => [
-    {
-      id: '1',
-      title: 'Appointment Reminder',
-      message: 'You have an appointment tomorrow at 10:00 AM',
-      type: 'info' as const,
-      read: false,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: '2',
-      title: 'Test Results Ready',
-      message: 'Your recent test results are now available',
-      type: 'success' as const,
-      read: false,
-      createdAt: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: '3',
-      title: 'Payment Due',
-      message: 'Payment for last visit is due in 3 days',
-      type: 'warning' as const,
-      read: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString()
+  
+  // Role-based notifications
+  const getInitialNotifications = (): Notification[] => {
+    if (user?.role === 'doctor') {
+      return [
+        {
+          id: '1',
+          title: 'New Appointment Scheduled',
+          message: 'A patient has booked an appointment for tomorrow at 2:00 PM',
+          type: 'info' as const,
+          read: false,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: 'Patient Check-in',
+          message: 'Patient John Doe checked in 5 minutes ago',
+          type: 'success' as const,
+          read: false,
+          createdAt: new Date(Date.now() - 300000).toISOString()
+        },
+        {
+          id: '3',
+          title: 'Queue Update',
+          message: 'Currently 3 patients waiting in queue',
+          type: 'warning' as const,
+          read: true,
+          createdAt: new Date(Date.now() - 600000).toISOString()
+        }
+      ];
+    } else if (user?.role === 'patient') {
+      return [
+        {
+          id: '1',
+          title: 'Appointment Reminder',
+          message: 'You have an appointment tomorrow at 10:00 AM with Dr. Smith',
+          type: 'info' as const,
+          read: false,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: 'Test Results Ready',
+          message: 'Your recent test results are now available',
+          type: 'success' as const,
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: '3',
+          title: 'Payment Due',
+          message: 'Payment for last visit is due in 3 days',
+          type: 'warning' as const,
+          read: true,
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+    } else if (user?.role === 'admin') {
+      return [
+        {
+          id: '1',
+          title: 'System Alert',
+          message: 'Database backup completed successfully',
+          type: 'success' as const,
+          read: false,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: 'User Management',
+          message: 'New doctor registration request pending approval',
+          type: 'warning' as const,
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: '3',
+          title: 'System Report',
+          message: 'Daily system health report is ready',
+          type: 'info' as const,
+          read: true,
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
     }
-  ]);
+    return [];
+  };
+
+  const [notifications, setNotifications] = useState<Notification[]>(getInitialNotifications);
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',

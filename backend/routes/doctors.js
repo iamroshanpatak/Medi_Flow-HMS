@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Appointment = require('../models/Appointment');
+const Queue = require('../models/Queue');
 const { protect, authorize } = require('../middleware/auth');
 
 // @route   GET /api/doctors
@@ -248,6 +249,265 @@ router.get('/:id/appointments', protect, async (req, res) => {
       success: true,
       count: appointments.length,
       data: appointments,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   GET /api/doctors/:id/patients
+// @desc    Get list of patients treated by doctor
+// @access  Private (Doctor - own patients, Admin)
+router.get('/:id/patients', protect, async (req, res) => {
+  try {
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access this information',
+      });
+    }
+
+    // Get all unique patients who have had appointments with this doctor
+    const patients = await Appointment.find({ doctor: req.params.id })
+      .distinct('patient');
+
+    // Fetch patient details
+    const patientDetails = await User.find({
+      _id: { $in: patients },
+      role: 'patient'
+    }).select('firstName lastName email phone dateOfBirth gender bloodGroup');
+
+    res.status(200).json({
+      success: true,
+      count: patientDetails.length,
+      data: patientDetails,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   GET /api/doctors/:id/analytics
+// @desc    Get doctor's performance analytics
+// @access  Private (Doctor - own analytics, Admin)
+router.get('/:id/analytics', protect, async (req, res) => {
+  try {
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access analytics',
+      });
+    }
+
+    const doctorId = req.params.id;
+
+    // Calculate date ranges
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+
+    // Get total appointments (all time)
+    const totalAppointments = await Appointment.countDocuments({ doctor: doctorId });
+
+    // Get completed appointments (all time)
+    const completedAppointments = await Appointment.countDocuments({
+      doctor: doctorId,
+      status: 'completed'
+    });
+
+    // Get appointments this month
+    const appointmentsThisMonth = await Appointment.countDocuments({
+      doctor: doctorId,
+      appointmentDate: { $gte: startOfMonth }
+    });
+
+    // Get completed appointments this month
+    const completedThisMonth = await Appointment.countDocuments({
+      doctor: doctorId,
+      status: 'completed',
+      appointmentDate: { $gte: startOfMonth }
+    });
+
+    // Get cancelled appointments this month
+    const cancelledThisMonth = await Appointment.countDocuments({
+      doctor: doctorId,
+      status: 'cancelled',
+      appointmentDate: { $gte: startOfMonth }
+    });
+
+    // Get unique patients count
+    const uniquePatients = await Appointment.find({ doctor: doctorId })
+      .distinct('patient');
+
+    // Get average rating
+    const ratings = await Appointment.find({
+      doctor: doctorId,
+      rating: { $exists: true, $ne: null }
+    }).select('rating');
+
+    const averageRating = ratings.length > 0
+      ? (ratings.reduce((sum, apt) => sum + apt.rating, 0) / ratings.length).toFixed(2)
+      : 0;
+
+    // Get queue statistics for today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayQueue = await Queue.find({
+      doctor: doctorId,
+      checkInTime: { $gte: todayStart, $lte: todayEnd }
+    });
+
+    const completedToday = todayQueue.filter(q => q.status === 'completed').length;
+    const waitingToday = todayQueue.filter(q => q.status === 'waiting').length;
+
+    // Calculate average consultation time
+    const consultations = await Appointment.find({
+      doctor: doctorId,
+      status: 'completed',
+      startTime: { $exists: true },
+      endTime: { $exists: true }
+    }).select('startTime endTime');
+
+    let averageConsultationMinutes = 0;
+    if (consultations.length > 0) {
+      const totalMinutes = consultations.reduce((sum, apt) => {
+        const start = new Date(`2000-01-01T${apt.startTime}`);
+        const end = new Date(`2000-01-01T${apt.endTime}`);
+        return sum + ((end - start) / 60000);
+      }, 0);
+      averageConsultationMinutes = Math.round(totalMinutes / consultations.length);
+    }
+
+    // No-show rate
+    const noShows = await Appointment.countDocuments({
+      doctor: doctorId,
+      status: 'no-show'
+    });
+
+    const noShowRate = totalAppointments > 0
+      ? ((noShows / totalAppointments) * 100).toFixed(2)
+      : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        allTime: {
+          totalAppointments,
+          completedAppointments,
+          completionRate: totalAppointments > 0
+            ? ((completedAppointments / totalAppointments) * 100).toFixed(2)
+            : 0,
+          uniquePatients: uniquePatients.length,
+          averageRating: parseFloat(averageRating),
+          noShowRate: parseFloat(noShowRate),
+        },
+        thisMonth: {
+          appointments: appointmentsThisMonth,
+          completed: completedThisMonth,
+          cancelled: cancelledThisMonth,
+          completionRate: appointmentsThisMonth > 0
+            ? ((completedThisMonth / appointmentsThisMonth) * 100).toFixed(2)
+            : 0,
+        },
+        today: {
+          completed: completedToday,
+          waiting: waitingToday,
+          totalToday: todayQueue.length,
+        },
+        performance: {
+          averageConsultationMinutes,
+          averageRating: parseFloat(averageRating),
+          noShowRate: parseFloat(noShowRate),
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   GET /api/doctors/:id/queue-stats
+// @desc    Get doctor's queue statistics
+// @access  Private (Doctor - own stats, Admin)
+router.get('/:id/queue-stats', protect, async (req, res) => {
+  try {
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
+
+    const doctorId = req.params.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Total queue entries today
+    const totalQueue = await Queue.countDocuments({
+      doctor: doctorId,
+      checkInTime: { $gte: today }
+    });
+
+    // Completed today
+    const completed = await Queue.countDocuments({
+      doctor: doctorId,
+      status: 'completed',
+      checkInTime: { $gte: today }
+    });
+
+    // Currently waiting
+    const waiting = await Queue.countDocuments({
+      doctor: doctorId,
+      status: 'waiting',
+      checkInTime: { $gte: today }
+    });
+
+    // No-shows today
+    const noShows = await Queue.countDocuments({
+      doctor: doctorId,
+      status: 'no-show',
+      checkInTime: { $gte: today }
+    });
+
+    // Calculate average wait time
+    const queueEntries = await Queue.find({
+      doctor: doctorId,
+      checkInTime: { $gte: today }
+    }).select('checkInTime estimatedWaitTime');
+
+    const avgWaitTime = queueEntries.length > 0
+      ? Math.round(queueEntries.reduce((sum, q) => sum + q.estimatedWaitTime, 0) / queueEntries.length)
+      : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        today: {
+          total: totalQueue,
+          completed,
+          waiting,
+          noShows,
+          averageWaitTimeMinutes: avgWaitTime,
+          completionRate: totalQueue > 0 ? ((completed / totalQueue) * 100).toFixed(2) : 0
+        }
+      }
     });
   } catch (error) {
     res.status(500).json({
