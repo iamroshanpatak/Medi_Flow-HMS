@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { recommendationsAPI, aiAPI } from '@/services/api';
+import { recommendationsAPI, aiAPI, doctorsAPI, appointmentsAPI } from '@/services/api';
 import { AlertCircle, CheckCircle, RefreshCw, Zap, Target, Heart, TrendingUp, Activity, Apple, Brain, AlertTriangle, Calendar, Download } from 'lucide-react';
 import Toast, { ToastType } from './Toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -55,6 +55,14 @@ interface TriageResult {
   confidence: string;
   message: string;
   matchedSymptoms?: string[];
+  healthLevel?: 'critical' | 'high' | 'moderate' | 'low';
+}
+
+interface Doctor {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  specialization: string;
 }
 
 const HEALTH_TREND_DATA: HealthTrend[] = [
@@ -71,11 +79,20 @@ export default function AIRecommendationsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'triage' | 'trends' | 'action-plan'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'ai-health' | 'health-graph' | 'action-plan'>('overview');
   const [symptoms, setSymptoms] = useState('');
   const [triageResult, setTriageResult] = useState<TriageResult | null>(null);
   const [triageLoading, setTriageLoading] = useState(false);
   const [expandedRecs, setExpandedRecs] = useState<Set<number>>(new Set());
+  const [bookingDoctor, setBookingDoctor] = useState(false);
+  const [appointmentBooked, setAppointmentBooked] = useState(false);
+  const [bookedAppointment, setBookedAppointment] = useState<{
+    doctorId: string;
+    doctorName: string;
+    date: string;
+    time: string;
+  } | null>(null);
+  const [symptomTrendData, setSymptomTrendData] = useState<HealthTrend[]>(HEALTH_TREND_DATA);
 
   useEffect(() => {
     loadAllData();
@@ -120,15 +137,154 @@ export default function AIRecommendationsPanel() {
         .filter((s) => s.length > 0);
 
       const response = await aiAPI.triage(symptomsArray);
-      setTriageResult(response.data.result);
-      setToast({ message: '🏥 Triage analysis complete', type: 'success' });
+      const result = response.data.result;
+      
+      // Determine health severity level
+      const healthLevel = result.confidence === 'high' ? 'critical' : result.confidence === 'medium' ? 'high' : 'moderate';
+      setTriageResult({ ...result, healthLevel });
+      
+      // Update trend based on symptoms
+      updateSymptomTrend(result.label, healthLevel);
+      
+      setToast({ message: '🏥 AI Health analysis complete - Ready to book doctor', type: 'success' });
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } }; message?: string };
-      const errorMsg = error.response?.data?.error || error.message || 'Triage analysis failed';
+      const errorMsg = error.response?.data?.error || error.message || 'Analysis failed';
       setToast({ message: errorMsg, type: 'error' });
     } finally {
       setTriageLoading(false);
     }
+  };
+
+  // Update health graph based on symptoms and condition
+  const updateSymptomTrend = (condition: string, healthLevel: string) => {
+    const impactMap: { [key: string]: number } = {
+      critical: -15,
+      high: -10,
+      moderate: -5,
+      low: 0,
+    };
+
+    const newTrendData = HEALTH_TREND_DATA.map((data) => ({
+      ...data,
+      score: Math.max(30, data.score + impactMap[healthLevel]),
+      fitness: Math.max(20, data.fitness + impactMap[healthLevel] / 2),
+      nutrition: Math.max(20, data.nutrition + impactMap[healthLevel] / 3),
+      mental: Math.max(20, data.mental + impactMap[healthLevel] / 2),
+    }));
+
+    setSymptomTrendData(newTrendData);
+  };
+
+  // Automatically book doctor based on triage results
+  // Map triage department codes to database department names
+  const mapDepartmentName = (triageDepartment: string): string => {
+    const departmentMap: { [key: string]: string } = {
+      'GENERAL_OPD': 'General Medicine',
+      'GENERAL': 'General Medicine',
+      'CARDIOLOGY': 'Cardiology',
+      'PEDIATRICS': 'Pediatrics',
+      'ORTHOPEDICS': 'Orthopedics',
+      'DERMATOLOGY': 'Dermatology',
+      'NEUROLOGY': 'Neurology',
+      'PSYCHIATRY': 'Psychiatry',
+      'ENT': 'ENT',
+      'OPHTHALMOLOGY': 'Ophthalmology',
+    };
+    return departmentMap[triageDepartment?.toUpperCase()] || triageDepartment || 'General Medicine';
+  };
+
+  const handleAutoBookDoctor = async () => {
+    if (!triageResult) {
+      setToast({ message: 'Please complete AI Health analysis first', type: 'warning' });
+      return;
+    }
+
+    setBookingDoctor(true);
+    try {
+      // Map triage department to database department name
+      const mappedDepartment = mapDepartmentName(triageResult.department);
+      const isEmergency = triageResult.healthLevel === 'critical' || triageResult.healthLevel === 'high';
+      
+      // Try to find doctors in the specific department first
+      let doctorsResponse = await doctorsAPI.getAll({ department: mappedDepartment });
+      let availableDoctors = doctorsResponse.data.data || [];
+
+      // If no doctors found in department AND it's emergency/critical, get any available doctor
+      if (availableDoctors.length === 0 && isEmergency) {
+        console.warn(`⚠️ No doctors in ${mappedDepartment}, finding any available doctor for emergency`);
+        doctorsResponse = await doctorsAPI.getAll();
+        availableDoctors = doctorsResponse.data.data || [];
+      }
+
+      if (availableDoctors.length === 0) {
+        setToast({ message: `No doctors available in ${mappedDepartment}. Please try again later.`, type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
+      // Pick first available doctor
+      const selectedDoctor = availableDoctors[0] as Doctor;
+
+      // Get available slots for tomorrow (default)
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const appointmentDate = tomorrow.toISOString().split('T')[0];
+
+      // For emergency/critical cases, prioritize early morning slots
+      const appointmentData = {
+        doctor: selectedDoctor._id,
+        department: mappedDepartment,
+        appointmentDate,
+        startTime: isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00'),
+        endTime: isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00'),
+        reason: `AI Health Analysis (${triageResult.healthLevel?.toUpperCase()}): ${triageResult.label} - ${symptoms}`,
+        type: isEmergency ? 'emergency' : 'consultation',
+      };
+
+      console.log('📅 Booking appointment:', appointmentData);
+
+      // Book appointment
+      await appointmentsAPI.create(appointmentData);
+
+      // Set appointment as booked
+      setBookedAppointment({
+        doctorId: selectedDoctor._id,
+        doctorName: `${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
+        date: appointmentDate,
+        time: appointmentData.startTime,
+      });
+
+      setAppointmentBooked(true);
+      const urgencyLabel = isEmergency ? '🚨 URGENT' : '✅';
+      setToast({
+        message: `${urgencyLabel} Appointment booked with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} at ${appointmentData.startTime}`,
+        type: 'success',
+      });
+
+      // Auto-redirect to action plan after 2 seconds
+      setTimeout(() => {
+        setActiveTab('action-plan');
+      }, 2000);
+    } catch (err) {
+      console.error('❌ Doctor Booking Error:', err);
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to book appointment';
+      console.error('Error Details:', { errorMsg, fullError: err });
+      setToast({ message: `❌ ${errorMsg}`, type: 'error' });
+    } finally {
+      setBookingDoctor(false);
+    }
+  };
+
+  // Reset the AI Health form
+  const handleReset = () => {
+    setSymptoms('');
+    setTriageResult(null);
+    setAppointmentBooked(false);
+    setBookedAppointment(null);
+    setSymptomTrendData(HEALTH_TREND_DATA);
+    setToast({ message: 'AI Health section reset', type: 'info' });
   };
 
   const getScoreColor = (score: number) => {
@@ -246,7 +402,7 @@ Next Review: ${recommendations?.nextReviewDate}
 
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b border-gray-200 bg-white rounded-lg p-1">
-        {(['overview', 'triage', 'trends', 'action-plan'] as const).map((tab) => (
+        {(['overview', 'ai-health', 'health-graph', 'action-plan'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -256,7 +412,7 @@ Next Review: ${recommendations?.nextReviewDate}
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'action-plan' ? '📋 Action Plan' : tab === 'trends' ? '📈 Trends' : tab === 'triage' ? '🏥 Triage' : '👁️ Overview'}
+            {tab === 'action-plan' ? '📋 Action Plan' : tab === 'health-graph' ? '📈 Health Graph' : tab === 'ai-health' ? '🏥 AI Health' : '👁️ Overview'}
           </button>
         ))}
       </div>
@@ -345,7 +501,7 @@ Next Review: ${recommendations?.nextReviewDate}
           {recommendations && (
             <>
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
+                <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
                   <Target size={20} className="text-blue-600" />
                   AI-Powered Recommendations ({recommendations.recommendations.length})
                 </h3>
@@ -433,114 +589,92 @@ Next Review: ${recommendations?.nextReviewDate}
         </div>
       )}
 
-      {/* Trends Tab */}
-      {activeTab === 'trends' && (
-        <div className="space-y-4 bg-white rounded-lg p-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <TrendingUp size={20} className="text-green-600" />
-            Health Score Trend (Last 28 Days)
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={HEALTH_TREND_DATA}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} name="Overall Score" />
-              <Line type="monotone" dataKey="fitness" stroke="#3b82f6" strokeWidth={1} opacity={0.6} />
-              <Line type="monotone" dataKey="nutrition" stroke="#8b5cf6" strokeWidth={1} opacity={0.6} />
-              <Line type="monotone" dataKey="mental" stroke="#ec4899" strokeWidth={1} opacity={0.6} />
-            </LineChart>
-          </ResponsiveContainer>
-
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <div className="bg-blue-50 p-3 rounded">
-              <p className="text-xs text-gray-600">28-Day Improvement</p>
-              <p className="text-2xl font-bold text-blue-600">+12 pts</p>
-            </div>
-            <div className="bg-green-50 p-3 rounded">
-              <p className="text-xs text-gray-600">Current Trend</p>
-              <p className="text-2xl font-bold text-green-600">📈 Improving</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Triage Tab */}
-      {activeTab === 'triage' && (
+      {/* AI Health Tab */}
+      {activeTab === 'ai-health' && (
         <div className="space-y-4 p-4 bg-white rounded-lg">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <AlertCircle size={20} className="text-blue-600" />
-            Smart Symptom Analyzer
-          </h3>
-          <p className="text-sm text-gray-600">
-            Describe your symptoms to get AI-powered department recommendations and guidance.
-          </p>
-
-          <textarea
-            value={symptoms}
-            onChange={(e) => setSymptoms(e.target.value)}
-            placeholder="e.g., fever, cough, sore throat, fatigue"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows={4}
-          />
-
-          <button
-            onClick={handleTriage}
-            disabled={triageLoading || !symptoms.trim()}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition font-medium"
-          >
-            {triageLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <RefreshCw size={18} className="animate-spin" />
-                Analyzing...
-              </span>
-            ) : (
-              'Analyze Symptoms'
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+                <AlertCircle size={20} className="text-blue-600" />
+                AI Health Analysis
+              </h3>
+              <p className="text-sm text-gray-900 mt-1">Describe symptoms to get AI analysis & automatic doctor booking</p>
+            </div>
+            {appointmentBooked && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition"
+              >
+                <RefreshCw size={16} />
+                Reset
+              </button>
             )}
-          </button>
+          </div>
+
+          {!appointmentBooked ? (
+            <>
+              <textarea
+                value={symptoms}
+                onChange={(e) => setSymptoms(e.target.value)}
+                placeholder="e.g., fever, cough, sore throat, body ache, fatigue"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-black placeholder-gray-500"
+                rows={4}
+              />
+
+              <button
+                onClick={handleTriage}
+                disabled={triageLoading || !symptoms.trim()}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition font-medium"
+              >
+                {triageLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <RefreshCw size={18} className="animate-spin" />
+                    Analyzing...
+                  </span>
+                ) : (
+                  '🔍 Analyze Symptoms'
+                )}
+              </button>
+            </>
+          ) : null}
 
           {triageResult && (
-            <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500 space-y-3">
-              <h4 className="font-semibold text-blue-900">Analysis Result</h4>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-blue-700 font-semibold">🏥 Recommended Department</p>
-                  <p className="text-2xl font-bold text-blue-600">{triageResult.department}</p>
+            <>
+              <div className={`p-4 rounded-lg border space-y-4 ${
+                triageResult.healthLevel === 'critical' ? 'bg-red-50 border-red-200' :
+                triageResult.healthLevel === 'high' ? 'bg-orange-50 border-orange-200' :
+                triageResult.healthLevel === 'moderate' ? 'bg-yellow-50 border-yellow-200' :
+                'bg-green-50 border-green-200'
+              }`}>
+                <div className="flex items-start justify-between">
+                  <h4 className="font-semibold text-lg text-gray-900">Analysis: {triageResult.label}</h4>
+                  <span className={`text-xs font-bold px-3 py-1 rounded text-white ${
+                    triageResult.healthLevel === 'critical' ? 'bg-red-600' :
+                    triageResult.healthLevel === 'high' ? 'bg-orange-600' :
+                    triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
+                  }`}>
+                    {triageResult.healthLevel?.toUpperCase()}
+                  </span>
                 </div>
 
-                <div>
-                  <p className="text-xs text-blue-700 font-semibold">📋 Likely Condition</p>
-                  <p className="text-lg text-gray-800 font-medium">{triageResult.label}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-blue-700 font-semibold">🎯 Confidence Level</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full bg-blue-600 ${
-                          triageResult.confidence === 'high'
-                            ? 'w-11/12'
-                            : triageResult.confidence === 'medium'
-                              ? 'w-7/12'
-                              : 'w-6/12'
-                        }`}
-                      />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-700 capitalize">{triageResult.confidence}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-xs font-semibold text-gray-900">Department</p>
+                    <p className="text-lg font-bold text-gray-900">{triageResult.department}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-xs font-semibold text-gray-900">Confidence</p>
+                    <p className="text-lg font-bold text-gray-900">{triageResult.confidence}</p>
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded border border-blue-200">
-                  <p className="text-sm text-gray-700">{triageResult.message}</p>
+                <div className="p-3 bg-white rounded border text-sm text-gray-900">
+                  {triageResult.message}
                 </div>
 
                 {triageResult.matchedSymptoms && triageResult.matchedSymptoms.length > 0 && (
                   <div>
-                    <p className="text-xs text-blue-700 font-semibold mb-2">✓ Matched Symptoms</p>
+                    <p className="text-xs font-semibold text-gray-900 mb-2">✓ Matched Symptoms</p>
                     <div className="flex flex-wrap gap-2">
                       {triageResult.matchedSymptoms.map((symptom, idx) => (
                         <span key={idx} className="bg-blue-200 text-blue-800 text-xs px-3 py-1 rounded-full font-medium">
@@ -550,7 +684,121 @@ Next Review: ${recommendations?.nextReviewDate}
                     </div>
                   </div>
                 )}
+
+                {!appointmentBooked && (
+                  <button
+                    onClick={handleAutoBookDoctor}
+                    disabled={bookingDoctor}
+                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition font-semibold flex items-center justify-center gap-2"
+                  >
+                    {bookingDoctor ? (
+                      <>
+                        <RefreshCw size={18} className="animate-spin" />
+                        Booking Doctor...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar size={18} />
+                        Book Doctor Automatically
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
+
+              {appointmentBooked && bookedAppointment && (
+                <div className="p-4 bg-green-50 rounded-lg border-2 border-green-400 space-y-3">
+                  <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                    <CheckCircle size={20} className="text-green-600" />
+                    ✅ Doctor Booked Successfully!
+                  </h4>
+                  <div className="space-y-2 text-sm text-gray-900">
+                    <p><strong>Doctor:</strong> Dr. {bookedAppointment.doctorName}</p>
+                    <p><strong>Date:</strong> {bookedAppointment.date}</p>
+                    <p><strong>Time:</strong> {bookedAppointment.time}</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('action-plan')}
+                    className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition font-semibold"
+                  >
+                    View Action Plan →
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition font-semibold"
+                  >
+                    Start New Analysis
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Health Graph Tab */}
+      {activeTab === 'health-graph' && (
+        <div className="space-y-4 bg-white rounded-lg p-4">
+          <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+            <TrendingUp size={20} className="text-green-600" />
+            Health Graph {triageResult && ` - Based on: ${triageResult.label}`}
+          </h3>
+
+          {triageResult ? (
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-900">
+                  <span className="font-semibold">Current Condition:</span> {triageResult.label} ({triageResult.healthLevel?.toUpperCase()})
+                </p>
+                <p className="text-sm text-gray-900 mt-1">Health graph adjusted based on your symptoms and severity</p>
+              </div>
+
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={symptomTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip formatter={(value) => `${value}/100`} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    name="Overall Health"
+                    dot={{ r: 5 }}
+                  />
+                  <Line type="monotone" dataKey="fitness" stroke="#8b5cf6" strokeWidth={2} name="Fitness" opacity={0.7} />
+                  <Line type="monotone" dataKey="nutrition" stroke="#ec4899" strokeWidth={2} name="Nutrition" opacity={0.7} />
+                  <Line type="monotone" dataKey="mental" stroke="#f59e0b" strokeWidth={2} name="Mental Health" opacity={0.7} />
+                </LineChart>
+              </ResponsiveContainer>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-red-50 p-3 rounded border border-red-200">
+                  <p className="text-xs text-gray-900">Health Impact</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {triageResult.healthLevel === 'critical' ? '-15' : triageResult.healthLevel === 'high' ? '-10' : '-5'}
+                  </p>
+                  <p className="text-xs text-gray-900 mt-1">points</p>
+                </div>
+                <div className="bg-green-50 p-3 rounded border border-green-200">
+                  <p className="text-xs text-gray-900">Recovery Trend</p>
+                  <p className="text-2xl font-bold text-green-600">📈</p>
+                  <p className="text-xs text-gray-900 mt-1">Improving with treatment</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-center bg-gray-50 rounded-lg">
+              <AlertCircle size={32} className="text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600">Complete AI Health analysis to see personalized health graph</p>
+              <button
+                onClick={() => setActiveTab('ai-health')}
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Go to AI Health Analysis
+              </button>
             </div>
           )}
         </div>
@@ -559,19 +807,47 @@ Next Review: ${recommendations?.nextReviewDate}
       {/* Action Plan Tab */}
       {activeTab === 'action-plan' && (
         <div className="space-y-4 bg-white rounded-lg p-4">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Calendar size={20} className="text-purple-600" />
-            Personalized Health Action Plan
-          </h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+              <Calendar size={20} className="text-purple-600" />
+              Action Plan {appointmentBooked && '& Doctor Instructions'}
+            </h3>
+            {appointmentBooked && (
+              <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+                <CheckCircle size={16} />
+                Doctor Appointment Confirmed
+              </div>
+            )}
+          </div>
+
+          {appointmentBooked && bookedAppointment && (
+            <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500 space-y-3">
+              <h4 className="font-semibold text-gray-900">Doctor Appointment Details</h4>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-900">Assigned Doctor</p>
+                  <p className="font-bold text-gray-900">Dr. {bookedAppointment.doctorName.split(' ').pop()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-900">Date & Time</p>
+                  <p className="font-bold text-gray-900">{bookedAppointment.date} @ {bookedAppointment.time}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-900">Condition</p>
+                  <p className="font-bold text-gray-900">{triageResult?.label || 'Consultation'}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {recommendations?.actionPlan && recommendations.actionPlan.length > 0 ? (
             <div className="space-y-3">
               {recommendations.actionPlan.map((plan, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div key={idx} className="border-2 border-gray-200 rounded-lg p-4 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-semibold text-gray-900">{plan.goal}</p>
-                      <p className="text-sm text-gray-600">Timeline: {plan.timeline}</p>
+                      <p className="font-semibold text-gray-900 text-lg">{plan.goal}</p>
+                      <p className="text-sm text-gray-900">Timeline: {plan.timeline}</p>
                     </div>
                     <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-3 py-1 rounded-full">
                       Goal {idx + 1}
@@ -583,7 +859,7 @@ Next Review: ${recommendations?.nextReviewDate}
                         <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
                           {stepIdx + 1}
                         </div>
-                        <p className="text-sm text-gray-700 pt-0.5">{step}</p>
+                        <p className="text-sm text-gray-900 pt-0.5">{step}</p>
                       </div>
                     ))}
                   </div>
@@ -597,7 +873,7 @@ Next Review: ${recommendations?.nextReviewDate}
       )}
 
       {/* Footer */}
-      <div className="text-xs text-gray-500 text-center p-3 bg-gray-50 rounded border border-gray-200">
+      <div className="text-xs text-gray-700 text-center p-3 bg-gray-50 rounded border border-gray-200">
         <p>🔄 Last updated: {recommendations?.generatedAt ? new Date(recommendations.generatedAt).toLocaleString() : 'Never'}</p>
         <p>📅 Next review: {recommendations?.nextReviewDate ? new Date(recommendations.nextReviewDate).toLocaleDateString() : 'Pending'}</p>
       </div>

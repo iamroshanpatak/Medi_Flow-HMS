@@ -76,7 +76,7 @@ export default function FaqChatbot() {
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
-                  msg.from === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
+                  msg.from === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-black"
                 }`}>
                   {msg.text}
                 </div>
@@ -84,7 +84,7 @@ export default function FaqChatbot() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-400 px-3 py-2 rounded-xl text-sm">Thinking...</div>
+                <div className="bg-gray-100 text-black px-3 py-2 rounded-xl text-sm">Thinking...</div>
               </div>
             )}
             <div ref={bottomRef} />
@@ -109,7 +109,7 @@ export default function FaqChatbot() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && sendMessage(input)}
               placeholder="Type your question..."
-              className="flex-1 text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="flex-1 text-sm text-black border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-200 placeholder-gray-500"
             />
             <button
               onClick={() => sendMessage(input)}

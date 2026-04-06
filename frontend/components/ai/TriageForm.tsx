@@ -87,7 +87,7 @@ export default function TriageForm({ onSubmit, loading, error }: TriageFormProps
             {selected.map((s) => (
               <span
                 key={s}
-                className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"
+                className="inline-flex items-center gap-1 bg-blue-100 text-gray-900 px-2 py-0.5 rounded-full text-xs"
               >
                 {s}
                 <button

@@ -11,9 +11,9 @@ interface Props {
 }
 
 const CATEGORY_STYLES = {
-  short: { bar: "bg-green-500", text: "text-green-700", bg: "bg-green-50", label: "Short wait" },
-  medium: { bar: "bg-yellow-500", text: "text-yellow-700", bg: "bg-yellow-50", label: "Moderate wait" },
-  long: { bar: "bg-red-500", text: "text-red-700", bg: "bg-red-50", label: "Long wait" },
+  short: { bar: "bg-green-500", text: "text-gray-900", bg: "bg-green-50", label: "Short wait" },
+  medium: { bar: "bg-yellow-500", text: "text-gray-900", bg: "bg-yellow-50", label: "Moderate wait" },
+  long: { bar: "bg-red-500", text: "text-gray-900", bg: "bg-red-50", label: "Long wait" },
 };
 
 export default function WaitTimeCard({ department, queuePosition, activeConsultations = 1 }: Props) {
@@ -50,7 +50,7 @@ export default function WaitTimeCard({ department, queuePosition, activeConsulta
   return (
     <div className={`rounded-xl border p-4 ${style.bg}`}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-gray-600">Estimated Wait Time</p>
+        <p className="text-sm font-medium text-gray-900">Estimated Wait Time</p>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full bg-white ${style.text}`}>
           {style.label}
         </span>
@@ -59,7 +59,7 @@ export default function WaitTimeCard({ department, queuePosition, activeConsulta
       <div className="flex items-end gap-2 mb-3">
         <span className={`text-4xl font-bold ${style.text}`}>{data.estimatedMinutes}</span>
         <span className={`text-sm pb-1 ${style.text}`}>minutes</span>
-        <span className="text-xs text-gray-400 pb-1 ml-auto">~{data.estimatedTime}</span>
+        <span className="text-xs text-gray-900 pb-1 ml-auto">~{data.estimatedTime}</span>
       </div>
 
       {/* Progress bar */}
@@ -70,12 +70,12 @@ export default function WaitTimeCard({ department, queuePosition, activeConsulta
         />
       </div>
 
-      <p className="text-xs text-gray-500">{data.message}</p>
+      <p className="text-xs text-gray-900">{data.message}</p>
 
       {/* Queue position badge */}
       <div className="mt-3 flex items-center gap-2">
-        <span className="text-xs text-gray-400">Queue position:</span>
-        <span className="text-xs font-semibold text-gray-700 bg-white px-2 py-0.5 rounded-full border">
+        <span className="text-xs text-gray-900">Queue position:</span>
+        <span className="text-xs font-semibold text-gray-900 bg-white px-2 py-0.5 rounded-full border">
           #{queuePosition}
         </span>
       </div>

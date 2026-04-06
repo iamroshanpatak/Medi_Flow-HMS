@@ -89,12 +89,12 @@ export default function RecommendationsPanel() {
   const getTabActiveColor = (tab: string) => {
     if (selectedTab === tab) {
       switch (tab) {
-        case 'immediate': return 'bg-red-100 text-red-700';
-        case 'shortTerm': return 'bg-yellow-100 text-yellow-700';
-        case 'longTerm': return 'bg-green-100 text-green-700';
-        case 'lifestyle': return 'bg-blue-100 text-blue-700';
-        case 'monitoring': return 'bg-purple-100 text-purple-700';
-        default: return 'bg-gray-100 text-gray-700';
+        case 'immediate': return 'bg-red-100 text-gray-900';
+        case 'shortTerm': return 'bg-yellow-100 text-gray-900';
+        case 'longTerm': return 'bg-green-100 text-gray-900';
+        case 'lifestyle': return 'bg-blue-100 text-gray-900';
+        case 'monitoring': return 'bg-purple-100 text-gray-900';
+        default: return 'bg-gray-100 text-gray-900';
       }
     }
     return 'bg-gray-50 text-gray-600 hover:bg-gray-100';
