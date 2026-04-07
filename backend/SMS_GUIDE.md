@@ -1,4 +1,4 @@
-# SMS Notification System Implementation
+# SMS Notification System - Setup & Testing Guide
 
 ## Overview
 SMS notifications have been integrated into the Medi_Flow HMS to complement the existing email notification system. The SMS service provides real-time notifications for appointment confirmations, cancellations, reschedules, reminders, and queue status updates.
@@ -7,11 +7,12 @@ SMS notifications have been integrated into the Medi_Flow HMS to complement the 
 
 ## 📁 Files Created/Modified
 
-### New Files:
+### New Files
 - **`/backend/utils/smsService.js`** - SMS notification service using Twilio
+- **`/backend/tests/testSMS.js`** - SMS test script
 - **`/backend/.env.example`** - Updated with Twilio configuration variables
 
-### Modified Files:
+### Modified Files
 - **`/backend/routes/appointments.js`** - Integrated SMS sending with email notifications
   - SMS sent on appointment creation
   - SMS sent on appointment cancellation
@@ -45,7 +46,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 NODE_ENV=production  # for real SMS, or development for logging only
 ```
 
-### Step 3: For Development (No Real SMS)
+### Step 3: Development Mode (No Real SMS)
 
 If you don't want to send real SMS during development:
 
@@ -56,7 +57,7 @@ TWILIO_AUTH_TOKEN=   # Leave empty or omit
 TWILIO_PHONE_NUMBER= # Leave empty or omit
 ```
 
-In development mode, all SMS messages will be logged to the console instead of being sent.
+In development mode, all SMS messages are logged to the console instead of being sent.
 
 ---
 
@@ -115,27 +116,14 @@ Hi [Patient Name], Dr. [Doctor Name] is ready for you now!
 
 ## 🎯 SMS Service Functions
 
-### Available Functions
-
 All functions follow the same pattern and return `{ success: boolean, messageId?: string, error?: string }`:
 
 ```javascript
-// Appointment Confirmations
 sendAppointmentConfirmationSMS(patientData)
-
-// Appointment Cancellations
 sendAppointmentCancellationSMS(patientData)
-
-// Appointment Reschedule
 sendAppointmentRescheduleSMS(patientData)
-
-// Appointment Reminders
 sendAppointmentReminderSMS(patientData)
-
-// Queue Status
 sendQueueStatusSMS(patientData)
-
-// Patient Called
 sendPatientCalledSMS(patientData)
 ```
 
@@ -144,7 +132,6 @@ sendPatientCalledSMS(patientData)
 ```javascript
 const { sendAppointmentConfirmationSMS } = require('../utils/smsService');
 
-// Send SMS
 const result = await sendAppointmentConfirmationSMS({
   patientPhone: '+977-1234567890',
   patientName: 'John Doe',
@@ -165,68 +152,100 @@ if (result.success) {
 
 ## 🔌 Integration Points
 
-### 1. Appointment Creation (`POST /api/appointments`)
-- **When**: After appointment is successfully created
-- **SMS Sent**: Appointment Confirmation
-- **Trigger**: Patient confirms booking
-
-### 2. Appointment Cancellation (`PUT /api/appointments/:id/cancel`)
-- **When**: After appointment status changes to 'cancelled'
-- **SMS Sent**: Appointment Cancellation
-- **Trigger**: Patient, doctor, or admin cancels appointment
-
-### 3. Appointment Reschedule (`PUT /api/appointments/:id/reschedule`)
-- **When**: After appointment is successfully rescheduled
-- **SMS Sent**: Appointment Reschedule
-- **Trigger**: Patient, doctor, or admin reschedules appointment
-
-### 4. Queue Check-in (Planned for Month 5)
-- **SMS Sent**: Queue Status Update
-- **Function**: `sendQueueStatusSMS()`
-
-### 5. Patient Called (Planned for Month 5)
-- **SMS Sent**: Patient Called Notification
-- **Function**: `sendPatientCalledSMS()`
-
-### 6. Appointment Reminders (Planned for Month 5)
-- **SMS Sent**: Appointment Reminder (24 hours before)
-- **Function**: `sendAppointmentReminderSMS()`
-- **Implementation**: Using Node cron job
+| Trigger | Endpoint | SMS Sent |
+|---------|----------|----------|
+| Appointment creation | `POST /api/appointments` | Confirmation |
+| Appointment cancellation | `PUT /api/appointments/:id/cancel` | Cancellation |
+| Appointment reschedule | `PUT /api/appointments/:id/reschedule` | Reschedule |
+| Queue check-in | (Month 5) | Queue Status Update |
+| Patient called | (Month 5) | Patient Called Notification |
+| 24-hour reminder | Cron job | Appointment Reminder |
 
 ---
 
-## 🧪 Testing SMS
+## 🧪 Testing
 
-### Development Mode (No Real SMS)
+### Option 1: Unit Test Script (Recommended)
+
 ```bash
-# Ensure NODE_ENV=development in .env
-NODE_ENV=development node server.js
-
-# Create an appointment
-# Check console logs for SMS messages
+cd backend
+node tests/testSMS.js
 ```
 
-**Console Output Example:**
+The script runs 5 SMS tests:
+1. ✅ Appointment Confirmation SMS
+2. ✅ Appointment Cancellation SMS
+3. ✅ Appointment Reschedule SMS
+4. ✅ Queue Status SMS
+5. ✅ Patient Called SMS
+
+**Expected Output (Development Mode):**
 ```
+📱 TEST 1: Appointment Confirmation SMS
 📱 [SMS DEV MODE]
-To: +977-1234567890
-Message: Hi John Doe, your appointment is confirmed! 
-📅 Date: Apr 15, 2026
-🕐 Time: 10:00 AM - 10:30 AM
-👨‍⚕️ Doctor: Dr. Smith
-🏥 MediFlow Hospital
-Reply STOP to opt out.
+To: +977-9800000001
+Message: Hi SMS Test, your appointment is confirmed! 
+...
+✅ All SMS tests completed!
+```
+
 ---
-```
 
-### Production Mode (Real SMS via Twilio)
+### Option 2: API Endpoint Testing
+
+**1. Login and get a JWT token:**
 ```bash
-# Update .env with Twilio credentials
-NODE_ENV=production node server.js
-
-# Create an appointment
-# SMS will be sent to the patient's phone number
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "patient@demo.com", "password": "password123"}'
 ```
+
+**2. Create appointment (triggers SMS automatically):**
+```bash
+curl -X POST http://localhost:5000/api/appointments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "doctor": "DOCTOR_ID_HERE",
+    "appointmentDate": "2026-04-10",
+    "startTime": "10:00 AM",
+    "endTime": "10:30 AM",
+    "reason": "General Checkup",
+    "type": "consultation"
+  }'
+```
+
+**3. Cancel appointment:**
+```bash
+curl -X PUT http://localhost:5000/api/appointments/APPOINTMENT_ID/cancel \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"reason": "Patient is unavailable"}'
+```
+
+**4. Reschedule appointment:**
+```bash
+curl -X PUT http://localhost:5000/api/appointments/APPOINTMENT_ID/reschedule \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "appointmentDate": "2026-04-15",
+    "startTime": "2:00 PM",
+    "endTime": "2:30 PM",
+    "reason": "Doctor suggested new time"
+  }'
+```
+
+---
+
+### Option 3: Full Workflow Manual Testing
+
+1. Start the backend: `cd backend && npm run dev`
+2. Start the frontend: `cd frontend && npm run dev`
+3. Register a test account at http://localhost:3000/register (include a phone number)
+4. Book an appointment via the Patient Dashboard
+5. Watch the backend console for SMS logs
+6. Test cancellation and reschedule from "My Appointments"
 
 ---
 
@@ -237,72 +256,45 @@ NODE_ENV=production node server.js
 - [ ] Appointment confirmation SMS triggers
 - [ ] Appointment cancellation SMS triggers
 - [ ] Appointment reschedule SMS triggers
-- [ ] SMS metadata (token, position) is correct
 - [ ] Patient phone numbers are formatted correctly
 - [ ] Error handling works (missing phone numbers)
-- [ ] Twilio credentials are validated
-- [ ] Production SMS sends successfully
+- [ ] Production SMS sends successfully (if Twilio configured)
 
 ---
 
-## ⚠️ Error Handling
+## ⚠️ Troubleshooting
 
-### Common Issues & Solutions
-
-**Issue**: "Patient phone number missing. SMS not sent."
-- **Cause**: Patient record doesn't have a phone number
-- **Solution**: Ensure all patient records include phone numbers during registration
-
-**Issue**: "Twilio credentials not configured"
-- **Cause**: Missing `TWILIO_ACCOUNT_SID` or `TWILIO_AUTH_TOKEN`
-- **Solution**: Add credentials to `.env` file or remove for dev mode
-
-**Issue**: SMS sending fails in production
-- **Cause**: Invalid Twilio credentials or account out of credits
-- **Solution**: Verify credentials in Twilio Console, check account balance
-
----
-
-## 🚀 Future Enhancements (Month 5)
-
-1. **Scheduled Reminders**
-   - Use Node.js cron to send reminders 24 hours before appointment
-   - Auto-send SMS to patients with upcoming appointments
-
-2. **Queue Notifications**
-   - SMS when patient is called for consultation
-   - Real-time queue position updates via SMS
-
-3. **Two-Way Messaging**
-   - Allow patients to reply to SMS
-   - SMS commands: `CANCEL`, `RESCHEDULE`, etc.
-
-4. **Delivery Tracking**
-   - Track SMS delivery status
-   - Retry failed deliveries
-
-5. **Opt-out Management**
-   - Store STOP requests from patients
-   - Respect opt-out preferences
-
----
-
-## 📞 Twilio Support
-
-- **Documentation**: https://www.twilio.com/docs/sms
-- **Console**: https://www.twilio.com/console
-- **Account Status**: https://www.twilio.com/console/billing/overview
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| "Patient phone number missing. SMS not sent." | Patient record has no phone number | Ensure patient records include phone numbers at registration |
+| "Twilio credentials not configured" | Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN | Add credentials to `.env` or omit for dev mode |
+| SMS fails in production | Invalid credentials or no credits | Verify credentials in Twilio Console, check account balance |
+| No SMS messages in console | NODE_ENV not set to development | Set `NODE_ENV=development` in `.env` |
+| Script can't connect to MongoDB | MongoDB not running | Start MongoDB (`mongod`), verify MONGODB_URI in `.env` |
 
 ---
 
 ## 🔒 Security Notes
 
-- Remove Twilio credentials from version control
-- Use `.env` file (added to `.gitignore`)
+- Never commit Twilio credentials to version control
+- Use `.env` file (already in `.gitignore`)
 - Rotate tokens periodically in production
 - Validate phone numbers before sending
 - Rate limit SMS to prevent abuse
 
 ---
 
-**Status**: SMS notification system is now integrated and ready for testing!
+## 🚀 Future Enhancements
+
+1. **Scheduled Reminders** - Cron job to send reminders 24 hours before appointments
+2. **Queue Notifications** - SMS when patient is called, real-time queue position updates
+3. **Two-Way Messaging** - Allow patients to reply (`CANCEL`, `RESCHEDULE`)
+4. **Delivery Tracking** - Track SMS delivery status, retry failed deliveries
+5. **Opt-out Management** - Store and respect STOP requests from patients
+
+---
+
+**SMS Service Location:** `/backend/utils/smsService.js`  
+**API Integration:** `/backend/routes/appointments.js`  
+**Test Script:** `/backend/tests/testSMS.js`  
+**Status:** ✅ Implemented and tested

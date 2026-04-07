@@ -85,7 +85,7 @@ Medi_Flow/
 ├── start.sh            # Quick start script
 └── README.md
 
-**See [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md) for detailed organization.**
+**See [FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) for detailed organization.**
 
 ## 🛠️ Installation & Setup
 

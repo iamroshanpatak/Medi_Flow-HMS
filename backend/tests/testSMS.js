@@ -280,7 +280,7 @@ async function runTests() {
     console.log(`${colors.bright}${colors.magenta}═══════════════════════════════════════════${colors.reset}\n`);
     
     log.info(`To test with real API endpoints, use the REST API Test Guide`);
-    log.info(`See: SMS_TEST_GUIDE.md for detailed instructions\n`);
+    log.info(`See: SMS_GUIDE.md for detailed instructions\n`);
     
   } catch (error) {
     log.error(`Test suite failed: ${error.message}`);
