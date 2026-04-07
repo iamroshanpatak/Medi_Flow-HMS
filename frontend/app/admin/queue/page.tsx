@@ -275,11 +275,12 @@ export default function AdminQueueMonitorPage() {
                         <span>{docQueue.completed}/{docQueue.totalPatients} completed</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
+                        {/* Progress bar with dynamic width calculation */}
                         <div
                           className="bg-green-500 h-2 rounded-full transition-all duration-500"
                           style={{
                             width: `${docQueue.totalPatients > 0 ? (docQueue.completed / docQueue.totalPatients) * 100 : 0}%`,
-                          }}
+                          } as React.CSSProperties}
                         ></div>
                       </div>
                     </div>
@@ -297,7 +298,7 @@ export default function AdminQueueMonitorPage() {
                       placeholder="Search patient or doctor..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                     />
                   </div>
                   <div className="relative">
