@@ -178,56 +178,59 @@ export default function DoctorPatientsPage() {
         {/* Patient Details Modal */}
         {showModal && selectedPatient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-96 overflow-y-auto">
-              <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-900">
+            <div className="bg-white rounded-lg max-w-2xl w-full p-0 max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Sticky Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+                <h2 className="text-2xl font-bold">
                   {selectedPatient.firstName} {selectedPatient.lastName}
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white font-semibold transition"
                 >
-                  ×
+                  ← Back
                 </button>
               </div>
 
-              <div className="mt-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-semibold text-gray-900">{selectedPatient.email}</p>
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Email</p>
+                    <p className="text-gray-900 break-words">{selectedPatient.email}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Phone</p>
-                    <p className="font-semibold text-gray-900">{selectedPatient.phone}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Phone</p>
+                    <p className="text-gray-900">{selectedPatient.phone}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Date of Birth</p>
-                    <p className="font-semibold text-gray-900">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Date of Birth</p>
+                    <p className="text-gray-900">
                       {selectedPatient.dateOfBirth
                         ? new Date(selectedPatient.dateOfBirth).toLocaleDateString()
                         : 'N/A'}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Age</p>
-                    <p className="font-semibold text-gray-900">{calculateAge(selectedPatient.dateOfBirth)}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Age</p>
+                    <p className="text-gray-900">{calculateAge(selectedPatient.dateOfBirth)} years</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Gender</p>
-                    <p className="font-semibold text-gray-900 capitalize">{selectedPatient.gender || 'N/A'}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Gender</p>
+                    <p className="text-gray-900 capitalize">{selectedPatient.gender || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Blood Group</p>
-                    <p className="font-semibold text-gray-900">{selectedPatient.bloodGroup || 'N/A'}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 font-semibold mb-1">Blood Group</p>
+                    <p className="text-gray-900">{selectedPatient.bloodGroup || 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              {/* Sticky Footer */}
+              <div className="border-t p-6 bg-gray-50">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 rounded-lg transition"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
                 >
                   Close
                 </button>

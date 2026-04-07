@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
+  UserPlus,
   Clock,
   FileText,
   Settings,
@@ -40,6 +41,7 @@ const menuItems = {
     { icon: Clock, label: 'Queue Management', href: '/doctor/queue', gradient: 'from-orange-500 to-amber-500' },
     { icon: Users, label: 'Patients', href: '/doctor/patients', gradient: 'from-purple-500 to-pink-500' },
     { icon: FileText, label: 'Medical Records', href: '/doctor/medical-records', gradient: 'from-indigo-500 to-blue-500' },
+    { icon: UserPlus, label: 'Walk-in Check-in', href: '/doctor/walk-in', gradient: 'from-green-500 to-teal-500' },
     { icon: Activity, label: 'Analytics', href: '/doctor/analytics', gradient: 'from-green-500 to-emerald-500' },
   ],
   admin: [

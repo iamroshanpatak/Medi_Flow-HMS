@@ -97,6 +97,38 @@ export default function DoctorQueuePage() {
     }
   };
 
+  const handleCompleteAndNext = async (currentQueueId: string) => {
+    setProcessing(currentQueueId);
+    try {
+      // Complete current patient
+      await queueAPI.complete(currentQueueId);
+      
+      // Get updated queue
+      const response = await queueAPI.getAll({ status: 'waiting,in-progress' });
+      const updatedQueue = response.data.data;
+      setQueue(updatedQueue);
+      
+      // Call next waiting patient if any
+      const nextWaiting = updatedQueue.find((q) => q.status === 'waiting');
+      if (nextWaiting) {
+        await queueAPI.callNext(nextWaiting._id);
+        setToast({ message: 'Patient consultation completed. Next patient called!', type: 'success' });
+      } else {
+        setToast({ message: 'Patient consultation completed. No more patients waiting.', type: 'success' });
+      }
+      
+      fetchQueue();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      setToast({
+        message: err.response?.data?.message || 'Failed to process action',
+        type: 'error',
+      });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const waitingPatients = queue.filter((q) => q.status === 'waiting');
   const currentPatient = queue.find((q) => q.status === 'in-progress');
 
@@ -186,12 +218,12 @@ export default function DoctorQueuePage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleComplete(currentPatient._id)}
+                      onClick={() => handleCompleteAndNext(currentPatient._id)}
                       disabled={processing === currentPatient._id}
                       className="flex items-center space-x-2 px-6 py-3 bg-white text-green-600 rounded-lg hover:bg-green-50 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <CheckCircle className="w-5 h-5" />
-                      <span>{processing === currentPatient._id ? 'Completing...' : 'Complete'}</span>
+                      <span>{processing === currentPatient._id ? 'Processing...' : 'Complete & Call Next'}</span>
                     </button>
                   </div>
                 </div>

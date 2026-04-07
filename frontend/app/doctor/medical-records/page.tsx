@@ -257,11 +257,19 @@ export default function MedicalRecordsPage() {
         {showDetailModal && selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Medical Record Details
-                  </h2>
+              <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-start">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Medical Record Details
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
+                    title="Go back"
+                    aria-label="Go back"
+                  >
+                    ← Back
+                  </button>
                   <button
                     onClick={() => setShowDetailModal(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -283,9 +291,11 @@ export default function MedicalRecordsPage() {
                     </svg>
                   </button>
                 </div>
+              </div>
 
+              <div className="p-6 space-y-6">
                 {/* Patient Info */}
-                <div className="mb-6 pb-6 border-b">
+                <div className="pb-6 border-b">
                   <h3 className="text-lg font-semibold mb-3">Patient Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
