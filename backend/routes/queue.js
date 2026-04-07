@@ -60,46 +60,6 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/queue/:id
-// @desc    Get single queue entry
-// @access  Private
-router.get('/:id', protect, async (req, res) => {
-  try {
-    const queueEntry = await Queue.findById(req.params.id)
-      .populate('patient', 'firstName lastName email phone')
-      .populate('doctor', 'firstName lastName specialization')
-      .populate('appointment');
-
-    if (!queueEntry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Queue entry not found',
-      });
-    }
-
-    // Check authorization
-    if (
-      req.user.role === 'patient' &&
-      queueEntry.patient._id.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this queue entry',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: queueEntry,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
-
 // @route   POST /api/queue/check-in
 // @desc    Check in for appointment (generate token)
 // @access  Private (Patient)
@@ -212,8 +172,8 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
 
 // @route   POST /api/queue/walk-in
 // @desc    Create walk-in queue entry
-// @access  Private (Staff, Admin)
-router.post('/walk-in', protect, authorize('staff', 'admin'), async (req, res) => {
+// @access  Private (Doctor, Staff, Admin)
+router.post('/walk-in', protect, authorize('doctor', 'staff', 'admin'), async (req, res) => {
   try {
     const { patientId, doctorId, reason } = req.body;
 
@@ -437,6 +397,46 @@ router.get('/status/patient', protect, authorize('patient'), async (req, res) =>
 
     queueEntry.position = position;
     await queueEntry.save();
+
+    res.status(200).json({
+      success: true,
+      data: queueEntry,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// @route   GET /api/queue/:id
+// @desc    Get single queue entry
+// @access  Private
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const queueEntry = await Queue.findById(req.params.id)
+      .populate('patient', 'firstName lastName email phone')
+      .populate('doctor', 'firstName lastName specialization')
+      .populate('appointment');
+
+    if (!queueEntry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Queue entry not found',
+      });
+    }
+
+    // Check authorization
+    if (
+      req.user.role === 'patient' &&
+      queueEntry.patient._id.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to access this queue entry',
+      });
+    }
 
     res.status(200).json({
       success: true,
