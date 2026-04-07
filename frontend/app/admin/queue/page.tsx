@@ -6,8 +6,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Toast, { ToastType } from '@/components/Toast';
-import { Clock, Users, AlertCircle, CheckCircle, BarChart3, Search, Filter } from 'lucide-react';
-import { queueAPI, doctorsAPI } from '@/services/api';
+import { Clock, Search, Filter } from 'lucide-react';
+import { queueAPI } from '@/services/api';
 import io from 'socket.io-client';
 
 interface QueueEntry {
@@ -56,14 +56,11 @@ export default function AdminQueueMonitorPage() {
   const [selectedDoctor, setSelectedDoctor] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [socket, setSocket] = useState(null);
-
   useEffect(() => {
     fetchAllQueues();
 
     // Setup Socket.IO
     const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
-    setSocket(newSocket);
 
     newSocket.on('queueUpdate', () => {
       fetchAllQueues();
@@ -82,7 +79,7 @@ export default function AdminQueueMonitorPage() {
       setAllQueueEntries(entries);
       
       // Organize by doctor
-      const doctorMap = new Map<string, any>();
+      const doctorMap = new Map<string, DoctorQueue>();
       
       entries.forEach((entry: QueueEntry) => {
         const doctorId = entry.doctor._id;
@@ -100,7 +97,7 @@ export default function AdminQueueMonitorPage() {
           });
         }
         
-        const doc = doctorMap.get(doctorId);
+        const doc = doctorMap.get(doctorId)!;
         doc.queue.push(entry);
         doc.totalPatients++;
         
