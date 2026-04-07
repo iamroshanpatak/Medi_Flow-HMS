@@ -60,7 +60,7 @@ export default function AdminQueueMonitorPage() {
     fetchAllQueues();
 
     // Setup Socket.IO
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001');
 
     newSocket.on('queueUpdate', () => {
       fetchAllQueues();
@@ -275,7 +275,6 @@ export default function AdminQueueMonitorPage() {
                         <span>{docQueue.completed}/{docQueue.totalPatients} completed</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        {/* Progress bar with dynamic width calculation */}
                         <div
                           className="bg-green-500 h-2 rounded-full transition-all duration-500"
                           style={{

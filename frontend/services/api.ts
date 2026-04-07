@@ -54,7 +54,7 @@ export default api;
 // Check if backend is reachable
 export const checkBackendHealth = async () => {
   try {
-    const response = await api.get('/api/status/health', { timeout: 5000 });
+    const response = await api.get('/api/health', { timeout: 5000 });
     return response.status === 200;
   } catch (error) {
     console.error('Backend health check failed:', error);

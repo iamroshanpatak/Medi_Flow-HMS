@@ -120,7 +120,6 @@ export default function ActionPlanView() {
             <p className="text-sm text-gray-600">{Math.round(progressPercentage)}%</p>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-            {/* eslint-disable-next-line react/style-prop-object */}
             <div
               className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}

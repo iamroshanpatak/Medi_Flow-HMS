@@ -16,6 +16,17 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": "warn",
       "react/display-name": "off",
       "@next/next/no-img-element": "off",
+      "@next/next/no-style-component-with-global-styles": "off",
+      "react/style-prop-object": "off",
+      "@next/next/no-inline-styles": "off",
+      "style-prop-object": "off",
+      "inline-styles": "off",
+    },
+  },
+  {
+    files: ["**/*.tsx", "**/*.ts"],
+    rules: {
+      "react/style-prop-object": "off",
     },
   },
   // Override default ignores of eslint-config-next.

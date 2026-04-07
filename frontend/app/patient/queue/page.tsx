@@ -51,7 +51,7 @@ export default function QueueStatusPage() {
     fetchQueueStatus();
 
     // Setup Socket.IO
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001');
 
     if (user?.id) {
       newSocket.emit('joinPatientRoom', user.id);
