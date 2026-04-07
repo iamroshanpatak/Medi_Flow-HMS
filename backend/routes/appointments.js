@@ -121,19 +121,63 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
   try {
     const { doctor, department, appointmentDate, startTime, endTime, reason, type } = req.body;
 
+    // Validate required fields
+    if (!doctor) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor ID is required',
+      });
+    }
+
+    if (!appointmentDate || !startTime || !endTime || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Appointment date, start time, end time, and reason are required',
+      });
+    }
+
     // Validate doctor exists
     const doctorExists = await User.findById(doctor);
     if (!doctorExists || doctorExists.role !== 'doctor') {
       return res.status(404).json({
         success: false,
-        message: 'Doctor not found',
+        message: 'Doctor not found or is not a valid doctor',
+      });
+    }
+
+    // Parse and validate appointment date
+    const parsedDate = new Date(appointmentDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid appointment date format. Use YYYY-MM-DD',
+      });
+    }
+
+    // Set time to start of day for date comparison
+    parsedDate.setHours(0, 0, 0, 0);
+
+    // Validate times are in HH:MM format
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid time format. Use HH:MM (24-hour format)',
+      });
+    }
+
+    // Validate startTime is before endTime
+    if (startTime >= endTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'Start time must be before end time',
       });
     }
 
     // Check if doctor is available at this time
     const conflictingAppointment = await Appointment.findOne({
       doctor,
-      appointmentDate: new Date(appointmentDate),
+      appointmentDate: parsedDate,
       status: { $in: ['scheduled', 'confirmed'] },
       $or: [
         { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
@@ -143,7 +187,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     if (conflictingAppointment) {
       return res.status(400).json({
         success: false,
-        message: 'This time slot is already booked',
+        message: 'This time slot is already booked. Please select a different time.',
       });
     }
 
@@ -152,7 +196,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
       patient: req.user.id,
       doctor,
       department: department || 'General Medicine',
-      appointmentDate: new Date(appointmentDate),
+      appointmentDate: parsedDate,
       startTime,
       endTime,
       reason,

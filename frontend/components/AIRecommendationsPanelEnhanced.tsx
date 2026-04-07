@@ -359,39 +359,56 @@ export default function AIRecommendationsPanel() {
       // Pick first available doctor
       const selectedDoctor = availableDoctors[0] as Doctor;
 
+      if (!selectedDoctor._id) {
+        setToast({ message: 'Invalid doctor data. Please try again.', type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
       // Get available slots for tomorrow (default)
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const appointmentDate = tomorrow.toISOString().split('T')[0];
 
+      // Validate date is in the future
+      if (new Date(appointmentDate) < new Date()) {
+        setToast({ message: 'Appointment date must be in the future', type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
       // For emergency/critical cases, prioritize early morning slots
+      const startTime = isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00');
+      const endTime = isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00');
+
       const appointmentData = {
         doctor: selectedDoctor._id,
         department: mappedDepartment,
         appointmentDate,
-        startTime: isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00'),
-        endTime: isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00'),
-        reason: `AI Health Analysis (${triageResult.healthLevel?.toUpperCase()}): ${triageResult.label} - ${symptoms}`,
+        startTime,
+        endTime,
+        reason: `AI Health Analysis (${triageResult.healthLevel?.toUpperCase()}): ${triageResult.label} - ${symptoms}`.substring(0, 500), // Limit reason length
         type: isEmergency ? 'emergency' : 'consultation',
       };
 
-      console.log('📅 Booking appointment:', appointmentData);
+      console.log('📅 Booking appointment with data:', appointmentData);
 
       // Book appointment
-      await appointmentsAPI.create(appointmentData);
+      const bookingResponse = await appointmentsAPI.create(appointmentData);
+      console.log('✅ Appointment booked successfully:', bookingResponse.data);
 
       // Set appointment as booked
       setBookedAppointment({
         doctorId: selectedDoctor._id,
         doctorName: `${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         date: appointmentDate,
-        time: appointmentData.startTime,
+        time: startTime,
       });
 
       setAppointmentBooked(true);
       const urgencyLabel = isEmergency ? '🚨 URGENT' : '✅';
       setToast({
-        message: `${urgencyLabel} Appointment booked with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} at ${appointmentData.startTime}`,
+        message: `${urgencyLabel} Appointment booked with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} at ${startTime}`,
         type: 'success',
       });
 
@@ -401,9 +418,40 @@ export default function AIRecommendationsPanel() {
       }, 2000);
     } catch (err) {
       console.error('❌ Doctor Booking Error:', err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to book appointment';
-      console.error('Error Details:', { errorMsg, fullError: err });
+      
+      // Extract error details with better handling
+      const error = err as { 
+        response?: { 
+          status?: number;
+          data?: { 
+            message?: string;
+            success?: boolean;
+          } 
+        }; 
+        message?: string;
+        code?: string;
+      };
+
+      let errorMsg = 'Failed to book appointment';
+      
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.response?.status === 400) {
+        errorMsg = 'Invalid appointment data or time slot already booked. Please try a different time.';
+      } else if (error.response?.status === 404) {
+        errorMsg = 'Selected doctor not found. Please try again.';
+      } else if (error.response?.status === 403) {
+        errorMsg = 'You are not authorized to book this appointment.';
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
+      console.error('Error Details:', { 
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        fullError: error 
+      });
+      
       setToast({ message: `❌ ${errorMsg}`, type: 'error' });
     } finally {
       setBookingDoctor(false);
