@@ -108,6 +108,7 @@ interface ProgressBarProps {
 
 const ProgressBar = ({ value }: ProgressBarProps) => (
   <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs overflow-hidden">
+    {/* eslint-disable-next-line react/style-prop-object */}
     <div
       className="bg-green-500 h-2 rounded-full transition-all duration-500"
       style={{ width: `${value}%` }}
