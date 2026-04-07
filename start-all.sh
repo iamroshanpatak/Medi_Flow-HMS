@@ -60,8 +60,8 @@ echo ""
 
 # Check if backend is already running
 echo -e "${YELLOW}🔍 Checking if backend is already running...${NC}"
-if check_port 5000; then
-  echo -e "${GREEN}✅ Backend is already running on port 5000${NC}"
+if check_port 5001; then
+  echo -e "${GREEN}✅ Backend is already running on port 5001${NC}"
 else
   echo -e "${YELLOW}🚀 Starting backend server...${NC}"
   
@@ -114,8 +114,8 @@ else
   if [ ! -f ".env.local" ]; then
     echo -e "${YELLOW}📝 Creating .env.local...${NC}"
     cat > .env.local << EOF
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5001
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
 EOF
   fi
   
@@ -142,8 +142,8 @@ echo -e "${GREEN}═════════════════════
 echo ""
 echo -e "${BLUE}📍 Access MediFlow:${NC}"
 echo -e "   ${GREEN}Frontend:${NC} http://localhost:3000"
-echo -e "   ${GREEN}Backend:${NC}  http://localhost:5000"
-echo -e "   ${GREEN}API:${NC}      http://localhost:5000/api"
+echo -e "   ${GREEN}Backend:${NC}  http://localhost:5001"
+echo -e "   ${GREEN}API:${NC}      http://localhost:5001/api"
 echo ""
 echo -e "${BLUE}🔑 Default Test Credentials:${NC}"
 echo -e "   ${YELLOW}Email:${NC} admin@mediflow.com"
@@ -151,7 +151,7 @@ echo -e "   ${YELLOW}Password:${NC} Your seeded password or register new account
 echo ""
 echo -e "${BLUE}📖 Quick Commands:${NC}"
 echo -e "   ${YELLOW}Logs:${NC} Check terminal windows above"
-echo -e "   ${YELLOW}Backend Port:${NC} 5000"
+echo -e "   ${YELLOW}Backend Port:${NC} 5001"
 echo -e "   ${YELLOW}Frontend Port:${NC} 3000"
 echo ""
 echo -e "${YELLOW}⚠️  Press Ctrl+C to stop all services${NC}"
