@@ -225,7 +225,7 @@ export default function AdminAppointmentsPage() {
                       placeholder="Search by patient, doctor, or email..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
                     />
                   </div>
                   <div className="relative">
@@ -234,7 +234,7 @@ export default function AdminAppointmentsPage() {
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                       title="Filter by status"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none text-black"
                     >
                       <option value="all">All Status</option>
                       <option value="scheduled">Scheduled</option>
@@ -251,7 +251,7 @@ export default function AdminAppointmentsPage() {
                       value={dateFilter}
                       onChange={(e) => setDateFilter(e.target.value)}
                       title="Filter by date"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent appearance-none text-black"
                     >
                       <option value="all">All Dates</option>
                       <option value="today">Today</option>
