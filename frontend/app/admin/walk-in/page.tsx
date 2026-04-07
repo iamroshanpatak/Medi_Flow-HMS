@@ -54,9 +54,11 @@ export default function WalkInCheckInPage() {
   const fetchPatients = async () => {
     try {
       const response = await usersAPI.getPatients();
-      setPatients(response.data.data);
+      const patientsData = response?.data?.data || [];
+      setPatients(Array.isArray(patientsData) ? patientsData : []);
     } catch (error) {
       console.error('Failed to fetch patients:', error);
+      setPatients([]);
     }
   };
 
@@ -94,7 +96,7 @@ export default function WalkInCheckInPage() {
     }
   };
 
-  const filteredPatients = patients.filter(
+  const filteredPatients = (patients || []).filter(
     (patient) =>
       patient.firstName.toLowerCase().includes(searchPatient.toLowerCase()) ||
       patient.lastName.toLowerCase().includes(searchPatient.toLowerCase()) ||
