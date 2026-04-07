@@ -109,7 +109,7 @@ export default function DoctorQueuePage() {
       setQueue(updatedQueue);
       
       // Call next waiting patient if any
-      const nextWaiting = updatedQueue.find((q) => q.status === 'waiting');
+      const nextWaiting = updatedQueue.find((q: QueueEntry) => q.status === 'waiting');
       if (nextWaiting) {
         await queueAPI.callNext(nextWaiting._id);
         setToast({ message: 'Patient consultation completed. Next patient called!', type: 'success' });
