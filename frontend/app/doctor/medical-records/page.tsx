@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { medicalRecordsAPI, usersAPI } from '@/services/api';
 import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 
 interface MedicalRecord {
   _id: string;
@@ -117,8 +120,13 @@ export default function MedicalRecordsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <ProtectedRoute allowedRoles={['doctor', 'admin']}>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar user={user} />
+        <Sidebar role={user?.role === 'doctor' ? 'doctor' : 'admin'} />
+
+        <div className="ml-0 md:ml-64 pt-6 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Medical Records</h1>
           <p className="mt-2 text-gray-600">
@@ -137,7 +145,7 @@ export default function MedicalRecordsPage() {
                 <select
                   value={selectedPatient}
                   onChange={(e) => setSelectedPatient(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                   title="Filter by Patient"
                 >
                   <option value="">All Patients</option>
@@ -156,7 +164,7 @@ export default function MedicalRecordsPage() {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                 title="Filter by Record Type"
               >
                 <option value="all">All Types</option>
@@ -257,40 +265,16 @@ export default function MedicalRecordsPage() {
         {showDetailModal && selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-900">
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+                <h2 className="text-2xl font-bold">
                   Medical Record Details
                 </h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
-                    title="Go back"
-                    aria-label="Go back"
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Close modal"
-                    aria-label="Close modal"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white font-semibold transition"
+                >
+                  ← Back
+                </button>
               </div>
 
               <div className="p-6 space-y-6">
@@ -363,10 +347,22 @@ export default function MedicalRecordsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Footer */}
+              <div className="border-t p-6 bg-gray-50">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

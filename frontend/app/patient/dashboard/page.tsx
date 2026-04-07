@@ -51,7 +51,7 @@ export default function PatientDashboard() {
                   trend={{ value: '~15 min wait', isPositive: false }}
                 />
               </div>
-              <div onClick={() => router.push('/patient/records')} className="cursor-pointer">
+              <div onClick={() => router.push('/patient/medical-records')} className="cursor-pointer">
                 <StatCard
                   title="Medical Records"
                   value="12"
@@ -162,13 +162,13 @@ export default function PatientDashboard() {
                 <QuickActionButton 
                   icon={FileText} 
                   label="View Records" 
-                  onClick={() => router.push('/patient/records')}
+                  onClick={() => router.push('/patient/medical-records')}
                   gradient="from-purple-500 to-pink-500"
                 />
                 <QuickActionButton 
                   icon={Activity} 
                   label="Health Reports" 
-                  onClick={() => router.push('/patient/records')}
+                  onClick={() => router.push('/patient/medical-records')}
                   gradient="from-green-500 to-emerald-500"
                 />
               </div>

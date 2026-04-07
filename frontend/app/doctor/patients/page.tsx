@@ -84,10 +84,10 @@ export default function DoctorPatientsPage() {
         <Navbar user={user} />
         <Sidebar role="doctor" />
 
-        <div className="ml-0 md:ml-64 pt-20 p-4 md:p-8">
+        <div className="ml-0 md:ml-64 pt-6 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-4">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">My Patients</h1>
               <p className="text-gray-600">
                 Total Patients: {patients.length}
@@ -95,7 +95,7 @@ export default function DoctorPatientsPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
@@ -103,7 +103,7 @@ export default function DoctorPatientsPage() {
                   placeholder="Search by name, email, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
             </div>

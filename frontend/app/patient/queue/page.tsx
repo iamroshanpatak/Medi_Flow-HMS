@@ -43,6 +43,7 @@ export default function QueueStatusPage() {
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [checkedInAppointmentId, setCheckedInAppointmentId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
@@ -91,11 +92,14 @@ export default function QueueStatusPage() {
   const handleCheckIn = async (appointmentId: string) => {
     setCheckingIn(true);
     try {
-      await queueAPI.checkIn(appointmentId);
-      setToast({ message: 'Checked in successfully!', type: 'success' });
-      fetchTodayAppointments();
-      fetchQueueStatus();
+      console.log('Checking in for appointment:', appointmentId);
+      const response = await queueAPI.checkIn(appointmentId);
+      console.log('Check-in response:', response.data);
+      setCheckedInAppointmentId(appointmentId);
+      setQueueStatus(response.data.data);
+      setToast({ message: 'Checked in successfully! Your queue position is: ' + response.data.data.position, type: 'success' });
     } catch (error: unknown) {
+      console.error('Check-in error:', error);
       const err = error as { response?: { data?: { message?: string } } };
       setToast({
         message: err.response?.data?.message || 'Failed to check in',
@@ -127,7 +131,7 @@ export default function QueueStatusPage() {
                     <div>
                       <h2 className="text-2xl font-bold mb-2">You&apos;re in the queue!</h2>
                       <p className="text-blue-100">
-                        Dr. {queueStatus.doctor.firstName} {queueStatus.doctor.lastName}
+                        Dr. {queueStatus.doctor?.firstName || 'N/A'} {queueStatus.doctor?.lastName || ''}
                       </p>
                     </div>
                     <div className="text-center">
@@ -219,9 +223,9 @@ export default function QueueStatusPage() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">
-                              Dr. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                              Dr. {appointment.doctor?.firstName || 'N/A'} {appointment.doctor?.lastName || ''}
                             </h4>
-                            <p className="text-sm text-gray-600">{appointment.doctor.specialization}</p>
+                            <p className="text-sm text-gray-600">{appointment.doctor?.specialization || 'Not assigned'}</p>
                             <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                               <span className="flex items-center">
                                 <Clock className="w-4 h-4 mr-1" />
@@ -240,7 +244,7 @@ export default function QueueStatusPage() {
                           </div>
                         </div>
 
-                        {appointment.status === 'scheduled' && !queueStatus && (
+                        {appointment.status === 'scheduled' && checkedInAppointmentId !== appointment._id && (
                           <button
                             onClick={() => handleCheckIn(appointment._id)}
                             disabled={checkingIn}
@@ -250,10 +254,13 @@ export default function QueueStatusPage() {
                           </button>
                         )}
 
-                        {queueStatus && queueStatus._id && appointment._id && (
-                          <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold">
-                            Checked In
-                          </span>
+                        {checkedInAppointmentId === appointment._id && queueStatus && (
+                          <div className="text-center">
+                            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold block mb-2">
+                              Checked In
+                            </span>
+                            <span className="text-sm font-bold text-blue-600">Position: #{queueStatus.position}</span>
+                          </div>
                         )}
                       </div>
                     ))}

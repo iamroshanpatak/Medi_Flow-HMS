@@ -31,8 +31,7 @@ const menuItems = {
     { icon: Calendar, label: 'Appointments', href: '/patient/appointments', gradient: 'from-purple-500 to-pink-500' },
     { icon: Calendar, label: 'Book Appointment', href: '/patient/book-appointment', gradient: 'from-green-500 to-emerald-500' },
     { icon: Clock, label: 'Queue Status', href: '/patient/queue', gradient: 'from-orange-500 to-red-500' },
-    { icon: FileText, label: 'Medical Records', href: '/patient/records', gradient: 'from-indigo-500 to-purple-500' },
-    { icon: Stethoscope, label: 'Doctors', href: '/patient/doctors', gradient: 'from-teal-500 to-cyan-500' },
+    { icon: FileText, label: 'Medical Records', href: '/patient/medical-records', gradient: 'from-indigo-500 to-purple-500' },
   ],
   doctor: [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/doctor/dashboard', gradient: 'from-emerald-500 to-teal-500' },

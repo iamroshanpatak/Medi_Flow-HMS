@@ -128,7 +128,7 @@ export default function AppointmentsPage() {
   const handleDateChange = (date: string) => {
     setRescheduleDate(date);
     setSelectedSlot(null);
-    if (rescheduleModal.appointment) {
+    if (rescheduleModal.appointment && rescheduleModal.appointment.doctor) {
       fetchAvailability(rescheduleModal.appointment.doctor._id, date);
     }
   };
@@ -313,9 +313,9 @@ export default function AppointmentsPage() {
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold text-gray-900">
-                                Dr. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                                Dr. {appointment.doctor?.firstName || 'N/A'} {appointment.doctor?.lastName || ''}
                               </h3>
-                              <p className="text-sm text-gray-600">{appointment.doctor.specialization}</p>
+                              <p className="text-sm text-gray-600">{appointment.doctor?.specialization || 'Not assigned'}</p>
                             </div>
                           </div>
 
@@ -463,8 +463,8 @@ export default function AppointmentsPage() {
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Current Appointment</h4>
               <p className="text-sm text-gray-600">
-                Dr. {rescheduleModal.appointment.doctor.firstName}{' '}
-                {rescheduleModal.appointment.doctor.lastName}
+                Dr. {rescheduleModal.appointment.doctor?.firstName || 'N/A'}{' '}
+                {rescheduleModal.appointment.doctor?.lastName || ''}
               </p>
               <p className="text-sm text-gray-600">
                 {new Date(rescheduleModal.appointment.appointmentDate).toLocaleDateString()} at{' '}

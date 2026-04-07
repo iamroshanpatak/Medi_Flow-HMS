@@ -292,7 +292,7 @@ export default function BookAppointmentPage() {
                                 className={`px-4 py-3 border-2 rounded-xl text-sm font-bold transition-all duration-200 hover:scale-105 ${
                                   selectedSlot?.startTime === slot.startTime
                                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg'
-                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                                    : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-black'
                                 }`}
                               >
                                 {slot.startTime} - {slot.endTime}

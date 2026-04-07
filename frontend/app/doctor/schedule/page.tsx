@@ -32,8 +32,17 @@ export default function DoctorSchedulePage() {
   const fetchAvailability = async () => {
     try {
       setLoading(true);
+      
+      // Initialize with empty slots for all days as default
+      const defaultAvailability = DAYS_OF_WEEK.map(day => ({
+        day,
+        slots: []
+      }));
+      
       if (!user?.id) {
-        throw new Error('User ID not available');
+        // User not ready yet, just use default
+        setAvailability(defaultAvailability);
+        return;
       }
       
       const response = await doctorsAPI.getById(user.id);
@@ -62,8 +71,6 @@ export default function DoctorSchedulePage() {
       // Show info if 404 (expected), warning for other issues
       if (error.response?.status === 404) {
         setToast({ message: 'Doctor profile not found. You can set up your schedule below.', type: 'success' });
-      } else if (error.message) {
-        setToast({ message: 'Note: Using default schedule. Changes will be saved.', type: 'success' });
       }
     } finally {
       setLoading(false);
@@ -120,13 +127,26 @@ export default function DoctorSchedulePage() {
   const handleSaveSchedule = async () => {
     setSaving(true);
     try {
+      if (!user?.id) {
+        setToast({ message: 'User ID not available. Please refresh the page.', type: 'error' });
+        setSaving(false);
+        return;
+      }
+      
       // Filter out days with no slots
       const filteredAvailability = availability.filter(day => day.slots.length > 0);
       
-      await doctorsAPI.updateAvailability(user?.id || '', filteredAvailability);
+      if (filteredAvailability.length === 0) {
+        setToast({ message: 'Please add at least one time slot before saving', type: 'error' });
+        setSaving(false);
+        return;
+      }
+      
+      await doctorsAPI.updateAvailability(user.id, filteredAvailability);
       setToast({ message: 'Schedule saved successfully!', type: 'success' });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
+      console.error('Schedule save error:', error);
       setToast({
         message: err.response?.data?.message || 'Failed to save schedule',
         type: 'error',
@@ -275,7 +295,7 @@ export default function DoctorSchedulePage() {
                                 onChange={(e) =>
                                   handleSlotChange(dayIndex, slotIndex, 'startTime', e.target.value)
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm text-gray-900 font-medium"
                               >
                                 {timeOptions.map((time) => (
                                   <option key={time} value={time}>
@@ -297,7 +317,7 @@ export default function DoctorSchedulePage() {
                                 onChange={(e) =>
                                   handleSlotChange(dayIndex, slotIndex, 'endTime', e.target.value)
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm text-gray-900 font-medium"
                               >
                                 {timeOptions.map((time) => (
                                   <option key={time} value={time}>

@@ -53,10 +53,13 @@ export default function DoctorWalkInPage() {
   const fetchPatients = async () => {
     try {
       const response = await usersAPI.getPatients();
-      setPatients(response.data.data);
-      setFilteredPatients(response.data.data);
+      const patientData = response.data.data || [];
+      setPatients(patientData);
+      setFilteredPatients(patientData);
     } catch (error) {
       console.error('Failed to fetch patients:', error);
+      setPatients([]);
+      setFilteredPatients([]);
       setToast({ message: 'Failed to load patients', type: 'error' });
     } finally {
       setPageLoading(false);
@@ -102,10 +105,10 @@ export default function DoctorWalkInPage() {
         <Navbar user={user} />
         <Sidebar role="doctor" />
 
-        <div className="ml-0 md:ml-64 pt-20 p-4 md:p-8">
+        <div className="ml-0 md:ml-64 pt-2 p-4 md:p-8">
           <div className="max-w-2xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-4">
               <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
                 <UserPlus className="w-8 h-8 mr-3 text-blue-600" />
                 Check-in Walk-in Patient
@@ -114,7 +117,7 @@ export default function DoctorWalkInPage() {
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-lg mb-8 flex">
+            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-lg mb-4 flex">
               <AlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-blue-800">
                 <p className="font-semibold mb-1">Walk-in Check-in</p>
@@ -147,14 +150,14 @@ export default function DoctorWalkInPage() {
                       />
                     </div>
                     <p className="text-sm text-gray-600 mt-2">
-                      Found {filteredPatients.length} patient{filteredPatients.length !== 1 ? 's' : ''}
+                      Found {filteredPatients?.length ?? 0} patient{(filteredPatients?.length ?? 0) !== 1 ? 's' : ''}
                     </p>
                   </div>
 
                   {/* Patient List */}
                   <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                    {filteredPatients.length === 0 ? (
-                      <div className="text-center py-8">
+                    {!filteredPatients || filteredPatients.length === 0 ? (
+                      <div className="text-center py-4">
                         <p className="text-gray-600">No patients found</p>
                       </div>
                     ) : (
@@ -163,7 +166,7 @@ export default function DoctorWalkInPage() {
                           key={patient._id}
                           type="button"
                           onClick={() => setSelectedPatient(patient._id)}
-                          className={`w-full text-left p-3 rounded-lg transition ${
+                          className={`w-full text-left p-2 rounded-lg transition ${
                             selectedPatient === patient._id
                               ? 'bg-blue-100 border-2 border-blue-600'
                               : 'bg-gray-50 border-2 border-gray-200 hover:border-blue-400'
@@ -172,7 +175,7 @@ export default function DoctorWalkInPage() {
                           <div className="font-semibold text-gray-900">
                             {patient.firstName} {patient.lastName}
                           </div>
-                          <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                          <div className="flex gap-4 mt-1 text-sm text-gray-600">
                             <span className="flex items-center">
                               <Mail className="w-3 h-3 mr-1" />
                               {patient.email}

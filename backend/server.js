@@ -8,6 +8,61 @@ const cronService = require('./utils/cronService');
 
 dotenv.config();
 
+// Data cleanup utility
+const cleanupMalformedData = async () => {
+  try {
+    const Queue = require('./models/Queue');
+    const Appointment = require('./models/Appointment');
+    const User = require('./models/User');
+
+    // Remove queue entries with missing doctor references
+    const queueEntriesWithoutDoctor = await Queue.deleteMany({ doctor: null });
+    if (queueEntriesWithoutDoctor.deletedCount > 0) {
+      console.log(`🧹 Cleaned up ${queueEntriesWithoutDoctor.deletedCount} queue entries with null doctor`);
+    }
+
+    // Remove appointments with missing doctor references
+    const appointmentsWithoutDoctor = await Appointment.deleteMany({ doctor: null });
+    if (appointmentsWithoutDoctor.deletedCount > 0) {
+      console.log(`🧹 Cleaned up ${appointmentsWithoutDoctor.deletedCount} appointments with null doctor`);
+    }
+
+    // Find queue entries with non-existent doctor references
+    const queueEntries = await Queue.find().select('doctor _id');
+    let queueCleanedCount = 0;
+    for (const entry of queueEntries) {
+      if (entry.doctor) {
+        const doctorExists = await User.findById(entry.doctor);
+        if (!doctorExists) {
+          await Queue.deleteOne({ _id: entry._id });
+          queueCleanedCount++;
+        }
+      }
+    }
+    if (queueCleanedCount > 0) {
+      console.log(`🧹 Cleaned up ${queueCleanedCount} queue entries with non-existent doctors`);
+    }
+
+    // Find appointments with non-existent doctor references
+    const appointments = await Appointment.find().select('doctor _id');
+    let appointmentCleanedCount = 0;
+    for (const appt of appointments) {
+      if (appt.doctor) {
+        const doctorExists = await User.findById(appt.doctor);
+        if (!doctorExists) {
+          await Appointment.deleteOne({ _id: appt._id });
+          appointmentCleanedCount++;
+        }
+      }
+    }
+    if (appointmentCleanedCount > 0) {
+      console.log(`🧹 Cleaned up ${appointmentCleanedCount} appointments with non-existent doctors`);
+    }
+  } catch (error) {
+    console.error('❌ Data cleanup error:', error.message);
+  }
+};
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -25,8 +80,10 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected successfully');
+    // Clean up malformed data
+    await cleanupMalformedData();
     // Initialize cron jobs after successful MongoDB connection
     cronService.initCronJobs();
   })

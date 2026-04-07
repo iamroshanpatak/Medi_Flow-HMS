@@ -5,6 +5,11 @@ const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
 
+// Drop conflicting unique index on startup (if it exists)
+Queue.collection.dropIndex('tokenNumber_1').catch(() => {
+  // Index doesn't exist, that's fine
+});
+
 // @route   GET /api/queue
 // @desc    Get all queue entries (filtered by role)
 // @access  Private
@@ -68,12 +73,21 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
     const { appointmentId } = req.body;
 
     // Validate appointment
-    const appointment = await Appointment.findById(appointmentId);
+    const appointment = await Appointment.findById(appointmentId).populate('doctor');
     
     if (!appointment) {
       return res.status(404).json({
         success: false,
         message: 'Appointment not found',
+      });
+    }
+
+    // Validate appointment has a doctor
+    if (!appointment.doctor) {
+      console.error('Appointment missing doctor:', appointmentId);
+      return res.status(400).json({
+        success: false,
+        message: 'Appointment missing doctor assignment',
       });
     }
 
@@ -113,17 +127,22 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       });
     }
 
-    // Generate token number
+    // Generate token number - get last token for this doctor TODAY only
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const lastToken = await Queue.findOne({
-      doctor: appointment.doctor,
-      date: { $gte: today },
+      doctor: appointment.doctor._id,
+      date: { $gte: startOfDay, $lte: endOfDay },
     }).sort({ tokenNumber: -1 });
 
     const tokenNumber = lastToken ? lastToken.tokenNumber + 1 : 1;
 
     // Calculate position and estimated wait time
     const queueAhead = await Queue.countDocuments({
-      doctor: appointment.doctor,
+      doctor: appointment.doctor._id,
       date: { $gte: today },
       status: { $in: ['waiting', 'in-progress'] },
     });
@@ -134,7 +153,7 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
     // Create queue entry
     const queueEntry = await Queue.create({
       patient: req.user.id,
-      doctor: appointment.doctor,
+      doctor: appointment.doctor._id,
       appointment: appointmentId,
       tokenNumber,
       date: new Date(),
@@ -151,11 +170,18 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       .populate('appointment');
 
     // Emit real-time update
-    const io = req.app.get('io');
-    io.to(`doctor-${appointment.doctor}`).emit('queueUpdate', {
-      action: 'check-in',
-      data: populatedEntry,
-    });
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`doctor-${appointment.doctor._id}`).emit('queueUpdate', {
+          action: 'check-in',
+          data: populatedEntry,
+        });
+      }
+    } catch (socketError) {
+      console.error('Socket.IO error:', socketError.message);
+      // Don't fail the request due to socket error
+    }
 
     res.status(201).json({
       success: true,
@@ -163,9 +189,10 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       data: populatedEntry,
     });
   } catch (error) {
+    console.error('Check-in error:', error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || 'Internal server error',
     });
   }
 });
@@ -387,9 +414,19 @@ router.get('/status/patient', protect, authorize('patient'), async (req, res) =>
       });
     }
 
+    // Validate doctor reference exists
+    if (!queueEntry.doctor) {
+      console.error('Queue entry missing doctor reference:', queueEntry._id);
+      return res.status(500).json({
+        success: false,
+        message: 'Invalid queue entry: missing doctor reference',
+      });
+    }
+
     // Calculate current position
+    const doctorId = queueEntry.doctor._id || queueEntry.doctor;
     const position = await Queue.countDocuments({
-      doctor: queueEntry.doctor._id,
+      doctor: doctorId,
       date: { $gte: today },
       status: 'waiting',
       tokenNumber: { $lt: queueEntry.tokenNumber },
@@ -403,9 +440,10 @@ router.get('/status/patient', protect, authorize('patient'), async (req, res) =>
       data: queueEntry,
     });
   } catch (error) {
+    console.error('Queue status error:', error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || 'Failed to get queue status',
     });
   }
 });
