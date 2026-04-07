@@ -11,13 +11,13 @@
 
 **Backend:**
 ```bash
-cd server
+cd backend
 npm install
 ```
 
 **Frontend:**
 ```bash
-cd client
+cd frontend
 npm install
 ```
 
@@ -36,20 +36,20 @@ mongod
 
 **Terminal 1 - Start Backend:**
 ```bash
-cd server
+cd backend
 npm run dev
 ```
 
 **Terminal 2 - Start Frontend:**
 ```bash
-cd client
+cd frontend
 npm run dev
 ```
 
 ### 4. Access the Application
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
+- **Backend API**: http://localhost:5001
 
 ## 🎯 What to Test
 
@@ -142,11 +142,29 @@ The application is fully responsive:
 - Admin user management
 - Type safety improvements
 
-### Coming in Month 3 🔄
+### Month 3 ✅
 - Appointment booking
-- Doctor availability
-- Appointment management
-- Email notifications
+- Reschedule and cancel
+- Doctor schedule setup
+- Calendar view
+
+### Month 4 ✅
+- Real-time queue management
+- Token generation
+- Walk-in patient integration
+- Doctor queue dashboard
+
+### Month 5 ✅
+- SMS/Email notifications
+- Scheduled appointment reminders
+- AI triage and chatbot
+- NLP intent mapping
+
+### Month 6 ✅
+- Advanced NLP and health recommendations
+- Predictive health analytics
+- Integration and endpoint testing
+- Production deployment configuration
 
 ## 🛠️ Troubleshooting
 
@@ -164,8 +182,8 @@ mongod --dbpath /path/to/data/db
 # Kill process on port 3000
 lsof -ti:3000 | xargs kill -9
 
-# Kill process on port 5000
-lsof -ti:5000 | xargs kill -9
+# Kill process on port 5001
+lsof -ti:5001 | xargs kill -9
 ```
 
 ### Module Not Found Errors
@@ -177,9 +195,9 @@ npm install
 
 ## 📚 Documentation
 
-- [SETUP_COMPLETE.md](./SETUP_COMPLETE.md) - Month 1 completion details
-- [MONTH_2_COMPLETE.md](./MONTH_2_COMPLETE.md) - Month 2 completion details
+- [archive/DEVELOPMENT_HISTORY.md](./archive/DEVELOPMENT_HISTORY.md) - Full development history (all 6 months)
 - [README.md](./README.md) - Full project documentation
+- [docs/README.md](./docs/README.md) - Complete documentation index
 
 ## 🎉 Next Steps
 
