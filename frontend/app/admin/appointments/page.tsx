@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Toast, { ToastType } from '@/components/Toast';
-import { Calendar, Search, Filter, Trash2, X, CheckCircle } from 'lucide-react';
+import { Calendar, Search, Filter, Trash2, X } from 'lucide-react';
 import { appointmentsAPI } from '@/services/api';
 
 interface Appointment {
@@ -52,6 +52,7 @@ export default function AdminAppointmentsPage() {
 
   useEffect(() => {
     filterAppointments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointments, searchTerm, statusFilter, dateFilter]);
 
   const fetchAppointments = async () => {
@@ -201,7 +202,7 @@ export default function AdminAppointmentsPage() {
                   <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <p className="text-sm text-gray-600 mb-1">Today's Appointments</p>
+                  <p className="text-sm text-gray-600 mb-1">Today - Appointments</p>
                   <p className="text-3xl font-bold text-blue-600">{stats.today}</p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
