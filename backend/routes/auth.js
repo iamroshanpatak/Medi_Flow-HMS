@@ -1,9 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+
+// Rate limiter for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per 15 minutes
+  message: 'Too many login/register attempts, please try again later.',
+  skipSuccessfulRequests: false,
+});
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -14,8 +23,8 @@ const generateToken = (id) => {
 
 // @route   POST /api/auth/register
 // @desc    Register new user
-// @access  Public
-router.post('/register', async (req, res) => {
+// @access  Public (rate limited)
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone, role, dateOfBirth, gender } = req.body;
 
@@ -64,8 +73,8 @@ router.post('/register', async (req, res) => {
 
 // @route   POST /api/auth/login
 // @desc    Login user
-// @access  Public
-router.post('/login', async (req, res) => {
+// @access  Public (rate limited)
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 

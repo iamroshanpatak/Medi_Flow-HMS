@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import FaqChatbot from "@/components/ai/FaqChatbot";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,12 +37,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-            <FaqChatbot />
-          </AuthProvider>
-        </LanguageProvider>
+        <ErrorBoundary>
+          <LanguageProvider>
+            <AuthProvider>
+              {children}
+              <FaqChatbot />
+            </AuthProvider>
+          </LanguageProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

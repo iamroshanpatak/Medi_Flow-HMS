@@ -157,6 +157,16 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     // Set time to start of day for date comparison
     parsedDate.setHours(0, 0, 0, 0);
 
+    // CRITICAL FIX: Validate appointment is not in the past
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (parsedDate < now) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot book appointments in the past. Please select a future date.',
+      });
+    }
+
     // Validate times are in HH:MM format
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {

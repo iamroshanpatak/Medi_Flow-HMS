@@ -589,7 +589,7 @@ export default function Navbar({ user }: NavbarProps) {
                   title="First Name"
                   value={editForm.firstName}
                   onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900"
                   required
                 />
               </div>
@@ -602,7 +602,7 @@ export default function Navbar({ user }: NavbarProps) {
                   title="Last Name"
                   value={editForm.lastName}
                   onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900"
                   required
                 />
               </div>
@@ -616,7 +616,7 @@ export default function Navbar({ user }: NavbarProps) {
                 type="tel"
                 value={editForm.phone}
                 onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
@@ -630,7 +630,7 @@ export default function Navbar({ user }: NavbarProps) {
                 title="Date of Birth"
                 value={editForm.dateOfBirth}
                 onChange={(e) => setEditForm({ ...editForm, dateOfBirth: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900"
               />
             </div>
 
@@ -642,12 +642,12 @@ export default function Navbar({ user }: NavbarProps) {
                 title="Gender"
                 value={editForm.gender}
                 onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900"
               >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="" className="text-gray-500">Select Gender</option>
+                <option value="male" className="text-gray-900">Male</option>
+                <option value="female" className="text-gray-900">Female</option>
+                <option value="other" className="text-gray-900">Other</option>
               </select>
             </div>
 

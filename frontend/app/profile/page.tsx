@@ -95,7 +95,7 @@ export default function ProfilePage() {
                             value={formData.firstName}
                             onChange={handleChange}
                             placeholder="Enter your first name"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                             required
                           />
                         </div>
@@ -109,7 +109,7 @@ export default function ProfilePage() {
                             value={formData.lastName}
                             onChange={handleChange}
                             placeholder="Enter your last name"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                             required
                           />
                         </div>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
                             value={formData.email}
                             onChange={handleChange}
                             title="Email address (cannot be changed)"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
                             disabled
                           />
                           <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                             value={formData.phone}
                             onChange={handleChange}
                             placeholder="Enter your phone number"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           />
                         </div>
                       </div>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
                             value={formData.dateOfBirth}
                             onChange={handleChange}
                             title="Select your date of birth"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                           />
                         </div>
                         <div>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                             type="text"
                             value={user?.role || ''}
                             title="Your account role (cannot be changed)"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 capitalize"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 capitalize text-gray-900"
                             disabled
                           />
                         </div>
@@ -210,11 +210,11 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   <button
                     onClick={() => setShowChangePassword(true)}
-                    className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-900"
                   >
                     Change Password
                   </button>
-                  <button className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                  <button className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-gray-900">
                     Privacy Settings
                   </button>
                   <button className="w-full text-left px-4 py-3 border border-red-300 rounded-lg hover:bg-red-50 transition text-red-600">

@@ -7,8 +7,8 @@ const { protect, authorize } = require('../middleware/auth');
 
 // @route   GET /api/doctors
 // @desc    Get all doctors
-// @access  Public
-router.get('/', async (req, res) => {
+// @access  Private (Authenticated users only) - FIXED: Was public, now requires authentication
+router.get('/', protect, async (req, res) => {
   try {
     let query = { role: 'doctor', isActive: true };
 

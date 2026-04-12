@@ -127,18 +127,25 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       });
     }
 
-    // Generate token number - get last token for this doctor TODAY only
+    // CRITICAL FIX: Use atomic operation to prevent race condition
+    // Generate token number using atomic counter pattern
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const lastToken = await Queue.findOne({
-      doctor: appointment.doctor._id,
-      date: { $gte: startOfDay, $lte: endOfDay },
-    }).sort({ tokenNumber: -1 });
+    // Use findOneAndUpdate with atomic increment (no race condition)
+    const counterDoc = await Queue.findOneAndUpdate(
+      {
+        doctor: appointment.doctor._id,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        isCounter: true, // marker for counter document
+      },
+      { $inc: { tokenNumber: 1 } },
+      { new: true, upsert: true }
+    );
 
-    const tokenNumber = lastToken ? lastToken.tokenNumber + 1 : 1;
+    const tokenNumber = counterDoc?.tokenNumber || 1;
 
     // Calculate position and estimated wait time
     const queueAhead = await Queue.countDocuments({
@@ -162,6 +169,7 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       position: queueAhead + 1,
       estimatedWaitTime,
       checkInTime: new Date(),
+      isCounter: false, // mark this as regular entry, not counter
     });
 
     const populatedEntry = await Queue.findById(queueEntry._id)

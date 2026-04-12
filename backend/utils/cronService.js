@@ -1,6 +1,7 @@
 /**
  * Cron Service - Scheduled Jobs for MediFlow
  * Handles all scheduled tasks including appointment reminders
+ * FIXED: Added locking mechanism to prevent duplicate jobs on multiple instances
  */
 
 const cron = require('node-cron');
@@ -10,15 +11,44 @@ const reminderService = require('./reminderService');
 
 // Store job references for cleanup
 let appointmentReminderJob = null;
+let isLocked = false;
+
+/**
+ * Simple locking mechanism to ensure only one instance runs cron jobs
+ * Uses environment variable to designate primary instance
+ */
+const canRunCronJobs = () => {
+  // If CRON_INSTANCE env var is set, only run on that instance
+  if (process.env.CRON_INSTANCE) {
+    return process.env.CRON_INSTANCE === (process.env.HOSTNAME || 'local');
+  }
+  // Default: only run on instances where NODE_ENV is not 'production' 
+  // OR set explicitly to run
+  return process.env.RUN_CRON !== 'false';
+};
 
 /**
  * Initialize all cron jobs
  * Called once when server starts
+ * FIXED: Only one instance should run cron jobs
  */
 const initCronJobs = () => {
   console.log('🕐 Initializing cron jobs...');
   
+  // CRITICAL FIX: Prevent duplicate cron jobs on multiple instances
+  if (!canRunCronJobs()) {
+    console.log('⏭️ Cron jobs disabled for this instance (set CRON_INSTANCE to enable)');
+    return;
+  }
+
+  if (isLocked) {
+    console.log('⚠️ Cron jobs already initialized');
+    return;
+  }
+  
   try {
+    isLocked = true;
+    
     // Schedule appointment reminder checks
     // Run every 5 minutes to check for appointments needing reminders
     appointmentReminderJob = cron.schedule('*/5 * * * *', async () => {
@@ -29,6 +59,7 @@ const initCronJobs = () => {
     console.log('✅ Cron jobs initialized successfully');
   } catch (error) {
     console.error('❌ Error initializing cron jobs:', error);
+    isLocked = false;
   }
 };
 

@@ -4,64 +4,31 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
 const cronService = require('./utils/cronService');
 
 dotenv.config();
 
-// Data cleanup utility
-const cleanupMalformedData = async () => {
-  try {
-    const Queue = require('./models/Queue');
-    const Appointment = require('./models/Appointment');
-    const User = require('./models/User');
+// Rate limiting middleware - Apply to all requests
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-    // Remove queue entries with missing doctor references
-    const queueEntriesWithoutDoctor = await Queue.deleteMany({ doctor: null });
-    if (queueEntriesWithoutDoctor.deletedCount > 0) {
-      console.log(`🧹 Cleaned up ${queueEntriesWithoutDoctor.deletedCount} queue entries with null doctor`);
-    }
+// Stricter rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5, // 5 attempts per 15 minutes
+  message: 'Too many login attempts, please try again later.',
+  skipSuccessfulRequests: true,
+});
 
-    // Remove appointments with missing doctor references
-    const appointmentsWithoutDoctor = await Appointment.deleteMany({ doctor: null });
-    if (appointmentsWithoutDoctor.deletedCount > 0) {
-      console.log(`🧹 Cleaned up ${appointmentsWithoutDoctor.deletedCount} appointments with null doctor`);
-    }
-
-    // Find queue entries with non-existent doctor references
-    const queueEntries = await Queue.find().select('doctor _id');
-    let queueCleanedCount = 0;
-    for (const entry of queueEntries) {
-      if (entry.doctor) {
-        const doctorExists = await User.findById(entry.doctor);
-        if (!doctorExists) {
-          await Queue.deleteOne({ _id: entry._id });
-          queueCleanedCount++;
-        }
-      }
-    }
-    if (queueCleanedCount > 0) {
-      console.log(`🧹 Cleaned up ${queueCleanedCount} queue entries with non-existent doctors`);
-    }
-
-    // Find appointments with non-existent doctor references
-    const appointments = await Appointment.find().select('doctor _id');
-    let appointmentCleanedCount = 0;
-    for (const appt of appointments) {
-      if (appt.doctor) {
-        const doctorExists = await User.findById(appt.doctor);
-        if (!doctorExists) {
-          await Appointment.deleteOne({ _id: appt._id });
-          appointmentCleanedCount++;
-        }
-      }
-    }
-    if (appointmentCleanedCount > 0) {
-      console.log(`🧹 Cleaned up ${appointmentCleanedCount} appointments with non-existent doctors`);
-    }
-  } catch (error) {
-    console.error('❌ Data cleanup error:', error.message);
-  }
-};
+// DISABLED: Automatic data cleanup - This caused data loss
+// Instead, provide manual cleanup endpoint for admins only
+// Data integrity is more important than cleaning orphaned records
 
 const app = express();
 const httpServer = createServer(app);
@@ -73,11 +40,16 @@ const io = new Server(httpServer, {
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
+// Apply rate limiting
+app.useInitialize cron jobs after successful MongoDB connection (with safety checks)
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(async () => {
@@ -186,4 +158,4 @@ process.on('SIGINT', () => {
   });
 });
 
-module.exports = { app, io };
+module.exports = { app, io, authLimiter };
