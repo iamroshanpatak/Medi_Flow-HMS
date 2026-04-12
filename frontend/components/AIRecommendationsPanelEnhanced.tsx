@@ -71,6 +71,7 @@ interface Doctor {
   firstName: string;
   lastName: string;
   specialization: string;
+  department?: string;
 }
 
 const HEALTH_TREND_DATA: HealthTrend[] = [
@@ -265,22 +266,6 @@ export default function AIRecommendationsPanel() {
 
   // Categorize symptoms by severity level
   const categorizeSymptomsWithUnmatched = (matchedInput: string[], allInputSymptoms: string[]) => {
-    // Define severity levels for each department type
-    const severityMap: { [key: string]: 'critical' | 'high' | 'moderate' | 'low' } = {
-      'EMERGENCY': 'critical',
-      'CARDIOLOGY': 'high',
-      'NEUROLOGY': 'high',
-      'GASTROENTEROLOGY': 'moderate',
-      'ORTHOPEDICS': 'moderate',
-      'DERMATOLOGY': 'low',
-      'ENT': 'low',
-      'GENERAL_OPD': 'normal',
-      'GENERAL': 'normal',
-      'PEDIATRICS': 'moderate',
-      'PSYCHIATRY': 'moderate',
-      'OPHTHALMOLOGY': 'low',
-    };
-
     const categorized = {
       critical: Array<string>(),
       high: Array<string>(),
@@ -444,7 +429,7 @@ export default function AIRecommendationsPanel() {
       console.log(`📋 Doctors API Response:`, doctorsResponse.data);
       console.log(`📋 Doctors available in ${mappedDepartment}:`, {
         count: availableDoctors.length,
-        doctors: availableDoctors.map((d: any) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
+        doctors: availableDoctors.map((d: Doctor) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
       });
 
       // If no doctors found in department AND it's emergency/critical, get any available doctor
@@ -454,7 +439,7 @@ export default function AIRecommendationsPanel() {
         availableDoctors = doctorsResponse.data.data || [];
         console.log(`📋 All doctors available:`, {
           count: availableDoctors.length,
-          doctors: availableDoctors.map((d: any) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
+          doctors: availableDoctors.map((d: Doctor) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
         });
       }
 
@@ -563,9 +548,6 @@ export default function AIRecommendationsPanel() {
         if (isEmergency && timeSlots.length > 1) {
           console.log(`🔄 Trying ${timeSlots.length - 1} alternative time slots for emergency appointment...`);
           
-          // Extract start and end time for first slot (already tried)
-          const [firstStartTime, firstEndTime] = timeSlots[0].split('-');
-          
           // Try alternative time slots
           for (let i = 1; i < timeSlots.length; i++) {
             const [altStartTime, altEndTime] = timeSlots[i].split('-');
@@ -635,14 +617,14 @@ export default function AIRecommendationsPanel() {
           data?: { 
             message?: string;
             success?: boolean;
-            errors?: any[];
+            errors?: Array<{ field: string; message: string }>;
             missingFields?: string[];
           } 
         }; 
         message?: string;
         code?: string;
-        config?: any;
-        request?: any;
+        config?: { url?: string; method?: string; data?: string };
+        request?: Record<string, unknown>;
       };
 
       let errorMsg = 'Failed to book appointment';
