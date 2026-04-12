@@ -107,6 +107,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const nlpRoutes = require('./routes/nlpRoutes');
 const recommendationsRoutes = require('./routes/recommendationsRoutes');
 const statusRoutes = require('./routes/status');
+const dashboardRoutes = require('./routes/dashboard');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -118,6 +119,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/nlp', nlpRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', statusRoutes);
 
 // Error handling middleware

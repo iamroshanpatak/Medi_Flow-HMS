@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { validateRegistration, validateEmail, validatePassword, validateProfileUpdate } = require('../utils/validation');
 
 // Rate limiter for authentication endpoints
 const authLimiter = rateLimit({
@@ -27,6 +28,25 @@ const generateToken = (id) => {
 router.post('/register', authLimiter, async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone, role, dateOfBirth, gender } = req.body;
+
+    // Validate input
+    const validation = validateRegistration({
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      gender,
+      dateOfBirth
+    });
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -78,11 +98,20 @@ router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email and password
-    if (!email || !password) {
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password',
+        message: emailValidation.error,
+      });
+    }
+
+    // Validate password provided
+    if (!password || typeof password !== 'string' || password.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required',
       });
     }
 
@@ -150,6 +179,16 @@ router.get('/me', protect, async (req, res) => {
 // @access  Private
 router.put('/update-profile', protect, async (req, res) => {
   try {
+    // Validate input
+    const validation = validateProfileUpdate(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
+    }
+
     const fieldsToUpdate = {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
@@ -158,6 +197,11 @@ router.put('/update-profile', protect, async (req, res) => {
       dateOfBirth: req.body.dateOfBirth,
       gender: req.body.gender,
     };
+
+    // Remove undefined fields
+    Object.keys(fieldsToUpdate).forEach(key => 
+      fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
+    );
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
       new: true,

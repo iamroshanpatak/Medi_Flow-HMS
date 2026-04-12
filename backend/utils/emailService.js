@@ -2,30 +2,33 @@ const nodemailer = require('nodemailer');
 
 // Create reusable transporter
 const createTransporter = () => {
-  // For development, use Ethereal email (fake SMTP service)
-  // For production, use real SMTP credentials from environment variables
-  if (process.env.NODE_ENV === 'production') {
-    return nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT || 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-  } else {
-    // Development mode - log to console
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'ethereal.user@ethereal.email',
-        pass: 'ethereal.password',
-      },
-    });
+  // All credentials should come from environment variables
+  // NO hardcoded credentials to prevent security issues
+  
+  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('⚠️ Email service not fully configured. Please set EMAIL_HOST, EMAIL_USER, and EMAIL_PASS in .env file');
+    // Return a mock transporter that logs instead of sending
+    return {
+      sendMail: async (mailOptions) => {
+        console.log('📧 [MOCK EMAIL] Would send email:', {
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+          timestamp: new Date().toISOString()
+        });
+        return { messageId: 'mock-' + Date.now() };
+      }
+    };
   }
+
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT || 587,
+    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 };
 
 // Send appointment confirmation email
