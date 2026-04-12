@@ -211,19 +211,26 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     }
 
     // Check if doctor is available at this time
+    // For emergency appointments, allow double-booking of critical patients
+    // For regular appointments, prevent all conflicts
+    const isEmergencyType = type === 'emergency';
+    
     const conflictingAppointment = await Appointment.findOne({
       doctor,
       appointmentDate: parsedDate,
       status: { $in: ['scheduled', 'confirmed'] },
+      // For emergency: only conflict with non-emergency, non-critical appointments
+      // For regular: conflict with everything
+      ...(isEmergencyType ? { type: { $nin: ['emergency'] } } : {}),
       $or: [
         { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
       ],
     });
 
     if (conflictingAppointment) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: `Time slot ${startTime}-${endTime} is already booked for this doctor. Please select a different time.`,
+        message: `Time slot ${startTime}-${endTime} is already booked for this doctor. ${isEmergencyType ? 'Your emergency appointment will be prioritized.' : 'Please select a different time.'}`,
       });
     }
 
@@ -253,6 +260,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
       startTime,
       endTime,
       reason,
+      isEmergency: type === 'emergency',
     });
 
     // Send confirmation SMS
@@ -263,11 +271,13 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
       appointmentDate,
       startTime,
       endTime,
+      isEmergency: type === 'emergency',
     });
 
     res.status(201).json({
       success: true,
       data: populatedAppointment,
+      message: type === 'emergency' ? '🚨 Emergency appointment created. You will be prioritized.' : 'Appointment created successfully',
     });
   } catch (error) {
     console.error('❌ Appointment Creation Error:', error);

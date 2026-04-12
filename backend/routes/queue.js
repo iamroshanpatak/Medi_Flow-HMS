@@ -50,7 +50,14 @@ router.get('/', protect, async (req, res) => {
       .populate('patient', 'firstName lastName phone')
       .populate('doctor', 'firstName lastName specialization')
       .populate('appointment')
-      .sort({ tokenNumber: 1 });
+      .sort({ 
+        // Priority: emergency first, then normal
+        priority: -1,
+        // Then by status (waiting/in-progress before completed)
+        status: 1,
+        // Then by token number (FIFO)
+        tokenNumber: 1
+      });
 
     res.status(200).json({
       success: true,
@@ -148,25 +155,30 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
     const tokenNumber = counterDoc?.tokenNumber || 1;
 
     // Calculate position and estimated wait time
-    const queueAhead = await Queue.countDocuments({
+    // For emergency appointments, get priority over regular appointments
+    const isEmergency = appointment.type === 'emergency';
+    
+    const queueAheadSameType = await Queue.countDocuments({
       doctor: appointment.doctor._id,
       date: { $gte: today },
       status: { $in: ['waiting', 'in-progress'] },
+      ...(isEmergency ? { type: 'emergency' } : { type: { $ne: 'emergency' } }),
     });
 
-    const avgConsultationTime = 15; // minutes
-    const estimatedWaitTime = queueAhead * avgConsultationTime;
+    const avgConsultationTime = isEmergency ? 10 : 15; // Emergency cases: 10 min, Regular: 15 min
+    const estimatedWaitTime = queueAheadSameType * avgConsultationTime;
 
-    // Create queue entry
+    // Create queue entry with priority
     const queueEntry = await Queue.create({
       patient: req.user.id,
       doctor: appointment.doctor._id,
       appointment: appointmentId,
       tokenNumber,
       date: new Date(),
-      type: 'appointment',
+      type: appointment.type || 'appointment',
       status: 'waiting',
-      position: queueAhead + 1,
+      priority: isEmergency ? 'emergency' : 'normal',
+      position: queueAheadSameType + 1,
       estimatedWaitTime,
       checkInTime: new Date(),
       isCounter: false, // mark this as regular entry, not counter
@@ -177,6 +189,14 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
       .populate('doctor', 'firstName lastName specialization')
       .populate('appointment');
 
+    console.log(`✅ Queue entry created for ${isEmergency ? '🚨 EMERGENCY' : 'regular'} appointment:`, {
+      patient: req.user.id,
+      doctor: appointment.doctor._id,
+      priority: queueEntry.priority,
+      position: queueEntry.position,
+      estimatedWait: estimatedWaitTime,
+    });
+
     // Emit real-time update
     try {
       const io = req.app.get('io');
@@ -184,6 +204,7 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
         io.to(`doctor-${appointment.doctor._id}`).emit('queueUpdate', {
           action: 'check-in',
           data: populatedEntry,
+          isEmergency,
         });
       }
     } catch (socketError) {
@@ -193,7 +214,7 @@ router.post('/check-in', protect, authorize('patient'), async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Checked in successfully',
+      message: isEmergency ? 'Emergency appointment checked in. You will be seen immediately.' : 'Checked in successfully',
       data: populatedEntry,
     });
   } catch (error) {

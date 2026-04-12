@@ -339,8 +339,17 @@ export default function AIRecommendationsPanel() {
       const mappedDepartment = mapDepartmentName(triageResult.department);
       const isEmergency = triageResult.healthLevel === 'critical' || triageResult.healthLevel === 'high';
       
+      console.log('🚀 Starting auto-booking for ' + (isEmergency ? '🚨 EMERGENCY' : 'regular') + ' case', {
+        healthLevel: triageResult.healthLevel,
+        department: triageResult.department,
+        mappedDepartment: mappedDepartment,
+        isEmergency,
+      });
+      
       // Log current user for debugging
       console.log('Current user:', user);
+      console.log('Current user role:', user?.role);
+      console.log('Current user ID:', user?.id);
       
       // Try to find doctors in the specific department first
       let doctorsResponse = await doctorsAPI.getAll({ department: mappedDepartment });
@@ -387,8 +396,16 @@ export default function AIRecommendationsPanel() {
       }
 
       // For emergency/critical cases, prioritize early morning slots
-      const startTime = isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00');
-      const endTime = isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00');
+      // But allow flexibility to find any available slot
+      let startTime = isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00');
+      let endTime = isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00');
+
+      // For critical patients, try multiple time slots if initial fails
+      const timeSlots = isEmergency 
+        ? ['08:00-09:00', '09:00-10:00', '10:00-11:00', '14:00-15:00', '15:00-16:00']
+        : [startTime + '-' + endTime];
+
+      console.log(`🕐 Available time slots for ${isEmergency ? 'emergency' : 'regular'} appointment:`, timeSlots);
 
       // Validate time format
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -419,8 +436,42 @@ export default function AIRecommendationsPanel() {
 
       console.log('📅 Booking appointment with data:', appointmentData);
 
-      // Book appointment
-      const bookingResponse = await appointmentsAPI.create(appointmentData);
+      // Try to book appointment
+      // For critical patients, if time slot fails, try alternative slots
+      let bookingResponse;
+      let bookingError = null;
+      
+      bookingResponse = await appointmentsAPI.create(appointmentData);
+      
+      if (!bookingResponse.data.success && isEmergency && timeSlots.length > 1) {
+        console.warn('⚠️ First time slot failed, trying alternatives for emergency appointment...');
+        
+        // Try alternative time slots for critical/emergency patients
+        for (let i = 1; i < timeSlots.length; i++) {
+          const [altStartTime, altEndTime] = timeSlots[i].split('-');
+          const altAppointmentData = {
+            ...appointmentData,
+            startTime: altStartTime,
+            endTime: altEndTime,
+          };
+          
+          try {
+            console.log(`🔄 Attempt ${i + 1}: Trying time slot ${altStartTime}-${altEndTime}`);
+            bookingResponse = await appointmentsAPI.create(altAppointmentData);
+            if (bookingResponse.data.success) {
+              console.log(`✅ Emergency appointment booked on attempt ${i + 1}`);
+              break;
+            }
+          } catch (slotError) {
+            console.warn(`⚠️ Slot ${i + 1} failed, trying next...`);
+            bookingError = slotError;
+            if (i === timeSlots.length - 1) {
+              throw bookingError;
+            }
+          }
+        }
+      }
+      
       console.log('✅ Appointment booked successfully:', bookingResponse.data);
 
       // Set appointment as booked
@@ -453,33 +504,66 @@ export default function AIRecommendationsPanel() {
             message?: string;
             success?: boolean;
             errors?: any[];
+            missingFields?: string[];
           } 
         }; 
         message?: string;
         code?: string;
+        config?: any;
+        request?: any;
       };
 
       let errorMsg = 'Failed to book appointment';
       
+      // Priority 1: Check for response message
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message;
-      } else if (error.response?.status === 400) {
+      } 
+      // Priority 2: Check for missing fields with specific list
+      else if (error.response?.data?.missingFields && error.response.data.missingFields.length > 0) {
+        errorMsg = `Missing required fields: ${error.response.data.missingFields.join(', ')}`;
+      }
+      // Priority 3: Handle by status code
+      else if (error.response?.status === 400) {
         errorMsg = error.response?.data?.message || 'Invalid appointment data. Please check all fields and try again.';
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
+      } else if (error.response?.status === 401) {
+        errorMsg = 'Your session expired. Please log in again.';
+      } else if (error.response?.status === 403) {
         errorMsg = 'You are not authorized to book appointments. Please log in again.';
       } else if (error.response?.status === 404) {
         errorMsg = 'Selected doctor or appointment slot not found. Please try again.';
+      } else if (error.response?.status === 409) {
+        errorMsg = 'Time slot conflict. Please select a different time.';
       } else if (error.response?.status === 422) {
-        errorMsg = 'Invalid data provided. Please check and try again.';
-      } else if (error.message) {
+        errorMsg = 'Invalid data provided. Please check the appointment details.';
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Server error. Please try again later.';
+      } 
+      // Priority 4: Network errors
+      else if (error.message?.includes('Network')) {
+        errorMsg = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('timeout')) {
+        errorMsg = 'Request timeout. Please try again.';
+      }
+      // Priority 5: Generic message
+      else if (error.message) {
         errorMsg = error.message;
       }
 
-      console.error('Error Details:', { 
-        status: error.response?.status,
+      // Comprehensive error logging for debugging
+      console.error('📊 Detailed Error Information:', { 
+        httpStatus: error.response?.status,
+        errorCode: error.code,
         message: error.response?.data?.message,
-        errors: error.response?.data?.errors,
-        fullError: error 
+        missingFields: error.response?.data?.missingFields,
+        validationErrors: error.response?.data?.errors,
+        requestUrl: error.config?.url,
+        requestMethod: error.config?.method,
+        requestData: error.config?.data ? JSON.parse(error.config?.data) : null,
+        errorType: error.response ? 'HTTP Error' : error.request ? 'Network Error' : 'Request Setup Error',
+        hasResponse: !!error.response,
+        hasRequest: !!error.request,
+        rawMessage: error.message,
       });
       
       setToast({ message: `❌ ${errorMsg}`, type: 'error' });
