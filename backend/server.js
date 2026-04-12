@@ -49,13 +49,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Apply rate limiting
-app.useInitialize cron jobs after successful MongoDB connection (with safety checks)
+app.use(generalLimiter);
+
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('✅ MongoDB connected successfully');
-    // Clean up malformed data
-    await cleanupMalformedData();
     // Initialize cron jobs after successful MongoDB connection
     cronService.initCronJobs();
   })

@@ -477,12 +477,24 @@ export default function AIRecommendationsPanel() {
       console.log(`✅ Selected doctor:`, {
         name: selectedDoctor.firstName + ' ' + selectedDoctor.lastName,
         id: selectedDoctor._id,
+        idType: typeof selectedDoctor._id,
         dept: selectedDoctor.department,
-        specialization: selectedDoctor.specialization
+        specialization: selectedDoctor.specialization,
+        fullObject: JSON.stringify(selectedDoctor)
       });
 
       if (!selectedDoctor._id) {
+        console.error('❌ Doctor _id is missing:', selectedDoctor);
         setToast({ message: 'Invalid doctor data. Please try again.', type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
+      // Ensure doctor ID is a string
+      const doctorIdString = String(selectedDoctor._id);
+      if (!doctorIdString || doctorIdString === 'undefined') {
+        console.error('❌ Doctor _id cannot be converted to string:', selectedDoctor._id);
+        setToast({ message: 'Invalid doctor ID format. Please try again.', type: 'error' });
         setBookingDoctor(false);
         return;
       }
@@ -533,7 +545,7 @@ export default function AIRecommendationsPanel() {
       }
 
       const appointmentData = {
-        doctor: selectedDoctor._id,
+        doctor: doctorIdString,
         department: mappedDepartment,
         appointmentDate,
         startTime,
@@ -560,10 +572,18 @@ export default function AIRecommendationsPanel() {
       
       // Try first time slot
       try {
+        console.log('🚀 Sending appointment creation request to backend...');
+        console.log('📤 Request Payload:', JSON.stringify(appointmentData, null, 2));
+        console.log('API URL should be: /api/appointments');
+        console.log('Request headers should include Authorization token:', !!localStorage.getItem('token'));
         bookingResponse = await appointmentsAPI.create(appointmentData);
         console.log('✅ Appointment booked successfully on first attempt:', bookingResponse.data);
       } catch (firstAttemptError) {
-        console.warn('⚠️ First time slot failed:', firstAttemptError);
+        console.error('❌ First time slot failed. Raw error:', firstAttemptError);
+        console.error('Error type:', firstAttemptError instanceof Error ? 'Error instance' : typeof firstAttemptError);
+        if (firstAttemptError && typeof firstAttemptError === 'object') {
+          console.error('Error keys:', Object.keys(firstAttemptError));
+        }
         lastError = firstAttemptError;
         
         // For emergency appointments, try alternative time slots
@@ -632,7 +652,27 @@ export default function AIRecommendationsPanel() {
     } catch (err) {
       console.error('❌ Doctor Booking Error:', err);
       
-      // Extract error details with better handling
+      // Log the raw error as a string to avoid empty object issue
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack?.substring(0, 500));
+      }
+      
+      // For Axios errors, extract response data  
+      const axiosError = err as { response?: { status?: number; data?: Record<string, unknown> }; message?: string };
+      if (axiosError?.response) {
+        console.error('📡 Backend Response Status:', axiosError.response.status);
+        console.error('📡 Backend Response Data (raw):', axiosError.response.data);
+        console.error('📡 Backend Response Data (stringified):', JSON.stringify(axiosError.response.data, null, 2));
+        console.error('📡 Backend Response Data Keys:', Object.keys(axiosError.response.data || {}));
+        if (axiosError.response.data) {
+          for (const key in axiosError.response.data) {
+            console.error(`  - ${key}:`, axiosError.response.data[key]);
+          }
+        }
+      }
+      
+      // Extract error details
       const error = err as { 
         response?: { 
           status?: number;
@@ -651,58 +691,105 @@ export default function AIRecommendationsPanel() {
 
       let errorMsg = 'Failed to book appointment';
       
-      // Priority 1: Check for response message
+      // Priority 1: Check for response message (most important - contains specific error)
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message;
+        console.log('📌 Using response message:', errorMsg);
       } 
       // Priority 2: Check for missing fields with specific list
       else if (error.response?.data?.missingFields && error.response.data.missingFields.length > 0) {
         errorMsg = `Missing required fields: ${error.response.data.missingFields.join(', ')}`;
+        console.log('📌 Using missing fields message:', errorMsg);
       }
       // Priority 3: Handle by status code
       else if (error.response?.status === 400) {
         errorMsg = error.response?.data?.message || 'Invalid appointment data. Please check all fields and try again.';
+        console.log('📌 Using 400 error message:', errorMsg);
       } else if (error.response?.status === 401) {
         errorMsg = 'Your session expired. Please log in again.';
+        console.log('📌 Using 401 error message:', errorMsg);
       } else if (error.response?.status === 403) {
         errorMsg = 'You are not authorized to book appointments. Please log in again.';
+        console.log('📌 Using 403 error message:', errorMsg);
       } else if (error.response?.status === 404) {
         errorMsg = 'Selected doctor or appointment slot not found. Please try again.';
+        console.log('📌 Using 404 error message:', errorMsg);
       } else if (error.response?.status === 409) {
-        errorMsg = 'Time slot conflict. Please select a different time.';
+        errorMsg = error.response?.data?.message || 'Time slot conflict. Please select a different time.';
+        console.log('📌 Using 409 time slot conflict message:', errorMsg);
       } else if (error.response?.status === 422) {
-        errorMsg = 'Invalid data provided. Please check the appointment details.';
+        errorMsg = error.response?.data?.message || 'Invalid data provided. Please check the appointment details.';
+        console.log('📌 Using 422 validation error message:', errorMsg);
       } else if (error.response?.status === 500) {
         errorMsg = 'Server error. Please try again later.';
+        console.log('📌 Using 500 error message:', errorMsg);
       } 
       // Priority 4: Network errors
       else if (error.message?.includes('Network')) {
         errorMsg = 'Network error. Please check your connection and try again.';
+        console.log('📌 Using network error message:', errorMsg);
       } else if (error.message?.includes('timeout')) {
         errorMsg = 'Request timeout. Please try again.';
+        console.log('📌 Using timeout error message:', errorMsg);
       }
       // Priority 5: Generic message
       else if (error.message) {
         errorMsg = error.message;
+        console.log('📌 Using generic error message:', errorMsg);
       }
 
-      // Comprehensive error logging for debugging
-      console.error('📊 Detailed Error Information:', { 
-        httpStatus: error.response?.status,
-        errorCode: error.code,
-        message: error.response?.data?.message,
-        missingFields: error.response?.data?.missingFields,
-        validationErrors: error.response?.data?.errors,
-        requestUrl: error.config?.url,
-        requestMethod: error.config?.method,
-        requestData: error.config?.data ? JSON.parse(error.config?.data) : null,
-        errorType: error.response ? 'HTTP Error' : error.request ? 'Network Error' : 'Request Setup Error',
-        hasResponse: !!error.response,
-        hasRequest: !!error.request,
-        rawMessage: error.message,
-      });
+      // Comprehensive error logging for debugging - with proper error handling
+      try {
+        let requestData = null;
+        try {
+          if (error.config?.data) {
+            requestData = typeof error.config.data === 'string' ? JSON.parse(error.config.data) : error.config.data;
+          }
+        } catch (parseError) {
+          console.warn('⚠️ Could not parse request data:', parseError);
+          requestData = error.config?.data;
+        }
+        
+        console.error('📊 Detailed Error Information:', { 
+          httpStatus: error.response?.status ?? 'N/A',
+          errorCode: error.code ?? 'N/A',
+          backendMessage: error.response?.data?.message ?? 'N/A',
+          missingFields: error.response?.data?.missingFields ?? 'N/A',
+          validationErrors: error.response?.data?.errors ?? 'N/A',
+          requestUrl: error.config?.url ?? 'N/A',
+          requestMethod: error.config?.method ?? 'N/A',
+          requestData: requestData,
+          errorType: error.response ? 'HTTP Error' : error.request ? 'Network Error' : 'Request Setup Error',
+          hasResponse: !!error.response,
+          hasRequest: !!error.request,
+          rawMessage: error.message ?? 'N/A',
+        });
+        
+        // Extra detailed logging - stringify the whole error response
+        try {
+          const responseObj = error.response as { status?: number; statusText?: string; data?: Record<string, unknown>; headers?: Record<string, string> };
+          console.error('📋 Full response object:', JSON.stringify({
+            status: responseObj?.status,
+            statusText: responseObj?.statusText,
+            data: responseObj?.data,
+            contentType: responseObj?.headers?.['content-type']
+          }, null, 2));
+        } catch (stringifyError) {
+          console.warn('Could not stringify response:', stringifyError);
+        }
+      } catch (logError) {
+        console.error('Error while logging error details:', logError);
+        const errorObj = err as { message?: string };
+        console.error('Fallback - raw error message:', errorObj?.message ?? 'Unknown error');
+      }
       
-      setToast({ message: `❌ ${errorMsg}`, type: 'error' });
+      // Show error toast with appropriate styling
+      if (error.response?.status === 409) {
+        console.warn('⏰ TIME SLOT CONFLICT DETECTED:', errorMsg);
+        setToast({ message: `⏰ ${errorMsg}`, type: 'warning' });
+      } else {
+        setToast({ message: `❌ ${errorMsg}`, type: 'error' });
+      }
     } finally {
       setBookingDoctor(false);
     }
