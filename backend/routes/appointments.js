@@ -121,6 +121,18 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
   try {
     const { doctor, department, appointmentDate, startTime, endTime, reason, type } = req.body;
 
+    console.log('📋 Appointment creation request:', {
+      doctor,
+      department,
+      appointmentDate,
+      startTime,
+      endTime,
+      reason: reason?.substring(0, 50),
+      type,
+      userId: req.user.id,
+      userRole: req.user.role,
+    });
+
     // Validate required fields
     if (!doctor) {
       return res.status(400).json({
@@ -130,9 +142,16 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     }
 
     if (!appointmentDate || !startTime || !endTime || !reason) {
+      const missingFields = [];
+      if (!appointmentDate) missingFields.push('appointmentDate');
+      if (!startTime) missingFields.push('startTime');
+      if (!endTime) missingFields.push('endTime');
+      if (!reason) missingFields.push('reason');
+      
       return res.status(400).json({
         success: false,
-        message: 'Appointment date, start time, end time, and reason are required',
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        missingFields,
       });
     }
 
@@ -141,7 +160,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     if (!doctorExists || doctorExists.role !== 'doctor') {
       return res.status(404).json({
         success: false,
-        message: 'Doctor not found or is not a valid doctor',
+        message: `Doctor not found or is not a valid doctor (ID: ${doctor})`,
       });
     }
 
@@ -150,7 +169,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     if (isNaN(parsedDate.getTime())) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid appointment date format. Use YYYY-MM-DD',
+        message: `Invalid appointment date format: "${appointmentDate}". Use YYYY-MM-DD format`,
       });
     }
 
@@ -169,10 +188,17 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
 
     // Validate times are in HH:MM format
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+    if (!timeRegex.test(startTime)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid time format. Use HH:MM (24-hour format)',
+        message: `Invalid start time format: "${startTime}". Use HH:MM (24-hour format, e.g., 14:30)`,
+      });
+    }
+
+    if (!timeRegex.test(endTime)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid end time format: "${endTime}". Use HH:MM (24-hour format, e.g., 15:30)`,
       });
     }
 
@@ -180,7 +206,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     if (startTime >= endTime) {
       return res.status(400).json({
         success: false,
-        message: 'Start time must be before end time',
+        message: `Start time (${startTime}) must be before end time (${endTime})`,
       });
     }
 
@@ -197,7 +223,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     if (conflictingAppointment) {
       return res.status(400).json({
         success: false,
-        message: 'This time slot is already booked. Please select a different time.',
+        message: `Time slot ${startTime}-${endTime} is already booked for this doctor. Please select a different time.`,
       });
     }
 
@@ -244,6 +270,7 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
       data: populatedAppointment,
     });
   } catch (error) {
+    console.error('❌ Appointment Creation Error:', error);
     res.status(500).json({
       success: false,
       message: error.message,

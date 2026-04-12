@@ -339,9 +339,14 @@ export default function AIRecommendationsPanel() {
       const mappedDepartment = mapDepartmentName(triageResult.department);
       const isEmergency = triageResult.healthLevel === 'critical' || triageResult.healthLevel === 'high';
       
+      // Log current user for debugging
+      console.log('Current user:', user);
+      
       // Try to find doctors in the specific department first
       let doctorsResponse = await doctorsAPI.getAll({ department: mappedDepartment });
       let availableDoctors = doctorsResponse.data.data || [];
+
+      console.log(`📋 Doctors available in ${mappedDepartment}:`, availableDoctors.length);
 
       // If no doctors found in department AND it's emergency/critical, get any available doctor
       if (availableDoctors.length === 0 && isEmergency) {
@@ -368,11 +373,15 @@ export default function AIRecommendationsPanel() {
       // Get available slots for tomorrow (default)
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const appointmentDate = tomorrow.toISOString().split('T')[0];
+      // Format with local timezone, not UTC
+      const appointmentDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+      console.log('📅 Appointment date:', appointmentDate);
 
       // Validate date is in the future
-      if (new Date(appointmentDate) < new Date()) {
-        setToast({ message: 'Appointment date must be in the future', type: 'error' });
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(appointmentDate)) {
+        setToast({ message: 'Invalid appointment date format', type: 'error' });
         setBookingDoctor(false);
         return;
       }
@@ -381,13 +390,30 @@ export default function AIRecommendationsPanel() {
       const startTime = isEmergency ? '08:00' : (triageResult.healthLevel === 'moderate' ? '10:00' : '11:00');
       const endTime = isEmergency ? '09:00' : (triageResult.healthLevel === 'moderate' ? '11:00' : '12:00');
 
+      // Validate time format
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+        setToast({ message: 'Invalid appointment time format', type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
+      // Get the reason and limit length
+      const reason = `AI Health Analysis (${triageResult.healthLevel?.toUpperCase()}): ${triageResult.label} - ${symptoms}`.substring(0, 500);
+
+      if (!reason || reason.trim().length === 0) {
+        setToast({ message: 'Appointment reason cannot be empty', type: 'error' });
+        setBookingDoctor(false);
+        return;
+      }
+
       const appointmentData = {
         doctor: selectedDoctor._id,
         department: mappedDepartment,
         appointmentDate,
         startTime,
         endTime,
-        reason: `AI Health Analysis (${triageResult.healthLevel?.toUpperCase()}): ${triageResult.label} - ${symptoms}`.substring(0, 500), // Limit reason length
+        reason,
         type: isEmergency ? 'emergency' : 'consultation',
       };
 
@@ -426,6 +452,7 @@ export default function AIRecommendationsPanel() {
           data?: { 
             message?: string;
             success?: boolean;
+            errors?: any[];
           } 
         }; 
         message?: string;
@@ -437,11 +464,13 @@ export default function AIRecommendationsPanel() {
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message;
       } else if (error.response?.status === 400) {
-        errorMsg = 'Invalid appointment data or time slot already booked. Please try a different time.';
+        errorMsg = error.response?.data?.message || 'Invalid appointment data. Please check all fields and try again.';
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        errorMsg = 'You are not authorized to book appointments. Please log in again.';
       } else if (error.response?.status === 404) {
-        errorMsg = 'Selected doctor not found. Please try again.';
-      } else if (error.response?.status === 403) {
-        errorMsg = 'You are not authorized to book this appointment.';
+        errorMsg = 'Selected doctor or appointment slot not found. Please try again.';
+      } else if (error.response?.status === 422) {
+        errorMsg = 'Invalid data provided. Please check and try again.';
       } else if (error.message) {
         errorMsg = error.message;
       }
@@ -449,6 +478,7 @@ export default function AIRecommendationsPanel() {
       console.error('Error Details:', { 
         status: error.response?.status,
         message: error.response?.data?.message,
+        errors: error.response?.data?.errors,
         fullError: error 
       });
       
