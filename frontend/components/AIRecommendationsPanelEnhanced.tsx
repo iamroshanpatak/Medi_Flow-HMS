@@ -327,8 +327,30 @@ export default function AIRecommendationsPanel() {
       const response = await aiAPI.triage(symptomsArray);
       const result = response.data.result;
       
-      // Determine health severity level
-      const healthLevel = result.confidence === 'high' ? 'critical' : result.confidence === 'medium' ? 'high' : 'moderate';
+      // Determine health severity level based on DEPARTMENT, not confidence
+      // Map department to actual health severity
+      const departmentHealthMap: { [key: string]: 'critical' | 'high' | 'moderate' | 'low' } = {
+        'EMERGENCY': 'critical',
+        'CARDIOLOGY': 'high',
+        'NEUROLOGY': 'high',
+        'GASTROENTEROLOGY': 'moderate',
+        'ORTHOPEDICS': 'moderate',
+        'PSYCHIATRY': 'moderate',
+        'PEDIATRICS': 'moderate',
+        'DERMATOLOGY': 'low',
+        'ENT': 'low',
+        'OPHTHALMOLOGY': 'low',
+        'GENERAL_OPD': 'low',
+        'GENERAL': 'low',
+      };
+      
+      const healthLevel = departmentHealthMap[result.department?.toUpperCase()] || 'low';
+      
+      console.log('🔍 Health level determined:', {
+        department: result.department,
+        healthLevel: healthLevel,
+        confidence: result.confidence
+      });
       
       // Categorize symptoms by severity
       const categorizedSymptoms = categorizeSymptomsWithUnmatched(result.matchedSymptoms || [], symptomsArray);
@@ -1062,7 +1084,9 @@ Next Review: ${recommendations?.nextReviewDate}
                     triageResult.healthLevel === 'high' ? 'bg-orange-600' :
                     triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
                   }`}>
-                    {triageResult.healthLevel?.toUpperCase()}
+                    {triageResult.healthLevel === 'critical' ? '🚨 CRITICAL' :
+                     triageResult.healthLevel === 'high' ? '⚠️ HIGH' :
+                     triageResult.healthLevel === 'moderate' ? '⚡ MODERATE' : '✅ NORMAL'}
                   </span>
                 </div>
 
@@ -1080,7 +1104,9 @@ Next Review: ${recommendations?.nextReviewDate}
                       triageResult.healthLevel === 'high' ? 'bg-orange-600' :
                       triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
                     }`}>
-                      {triageResult.healthLevel?.toUpperCase() || 'NORMAL'}
+                      {triageResult.healthLevel === 'critical' ? '🚨 CRITICAL' :
+                       triageResult.healthLevel === 'high' ? '⚠️ HIGH' :
+                       triageResult.healthLevel === 'moderate' ? '⚡ MODERATE' : '✅ NORMAL'}
                     </span>
                   </div>
                   <div className={`p-3 rounded border ${
@@ -1099,7 +1125,9 @@ Next Review: ${recommendations?.nextReviewDate}
                       triageResult.healthLevel === 'high' ? 'bg-orange-600' :
                       triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
                     }`}>
-                      {triageResult.healthLevel?.toUpperCase() || 'NORMAL'}
+                      {triageResult.healthLevel === 'critical' ? '🚨 CRITICAL' :
+                       triageResult.healthLevel === 'high' ? '⚠️ HIGH' :
+                       triageResult.healthLevel === 'moderate' ? '⚡ MODERATE' : '✅ NORMAL'}
                     </span>
                   </div>
                 </div>
