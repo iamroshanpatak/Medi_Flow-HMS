@@ -1067,13 +1067,40 @@ Next Review: ${recommendations?.nextReviewDate}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-3 rounded border">
-                    <p className="text-xs font-semibold text-gray-900">Department</p>
-                    <p className="text-lg font-bold text-gray-900">{triageResult.department}</p>
+                  <div className={`p-3 rounded border ${
+                    triageResult.healthLevel === 'critical' ? 'bg-red-50 border-red-200' :
+                    triageResult.healthLevel === 'high' ? 'bg-orange-50 border-orange-200' :
+                    triageResult.healthLevel === 'moderate' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-green-50 border-green-200'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-900 mb-1">📍 Department</p>
+                    <p className="text-sm font-bold text-gray-900">{triageResult.department}</p>
+                    <span className={`inline-block mt-2 text-xs font-bold px-2 py-1 rounded text-white ${
+                      triageResult.healthLevel === 'critical' ? 'bg-red-600' :
+                      triageResult.healthLevel === 'high' ? 'bg-orange-600' :
+                      triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
+                    }`}>
+                      {triageResult.healthLevel?.toUpperCase() || 'NORMAL'}
+                    </span>
                   </div>
-                  <div className="bg-white p-3 rounded border">
-                    <p className="text-xs font-semibold text-gray-900">Confidence</p>
-                    <p className="text-lg font-bold text-gray-900">{triageResult.confidence}</p>
+                  <div className={`p-3 rounded border ${
+                    triageResult.confidence === 'high' ? 'bg-red-50 border-red-200' :
+                    triageResult.confidence === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-green-50 border-green-200'
+                  }`}>
+                    <p className="text-xs font-semibold text-gray-900 mb-1">🎯 Confidence</p>
+                    <p className={`text-sm font-bold ${
+                      triageResult.confidence === 'high' ? 'text-red-700' :
+                      triageResult.confidence === 'medium' ? 'text-yellow-700' :
+                      'text-green-700'
+                    }`}>{triageResult.confidence?.toUpperCase()}</p>
+                    <span className={`inline-block mt-2 text-xs font-bold px-2 py-1 rounded text-white ${
+                      triageResult.healthLevel === 'critical' ? 'bg-red-600' :
+                      triageResult.healthLevel === 'high' ? 'bg-orange-600' :
+                      triageResult.healthLevel === 'moderate' ? 'bg-yellow-600' : 'bg-green-600'
+                    }`}>
+                      {triageResult.healthLevel?.toUpperCase() || 'NORMAL'}
+                    </span>
                   </div>
                 </div>
 
