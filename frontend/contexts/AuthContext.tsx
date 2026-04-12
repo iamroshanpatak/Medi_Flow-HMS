@@ -103,9 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorMessage = error.message || 'Login failed';
         }
       } else if (typeof error === 'object' && error !== null) {
-        const err = error as any;
-        statusCode = err.response?.status;
-        errorCode = err.code;
+        const err = error as Record<string, unknown>;
+        statusCode = (err.response as Record<string, unknown>)?.status as number;
+        errorCode = err.code as string;
         
         if (err.isNetworkError) {
           errorMessage = `🔴 Network Error: ${err.message}`;
@@ -113,10 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorMessage = '❌ Invalid email or password';
         } else if (statusCode === 500) {
           errorMessage = '❌ Server error. Please try again later.';
-        } else if (err.response?.data?.message) {
-          errorMessage = err.response.data.message;
+        } else if ((err.response as Record<string, unknown>)?.data?.message) {
+          errorMessage = ((err.response as Record<string, unknown>)?.data as Record<string, unknown>)?.message as string;
         } else if (err.message) {
-          errorMessage = err.message;
+          errorMessage = err.message as string;
         }
       }
       
@@ -173,20 +173,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorMessage = error.message || 'Registration failed';
         }
       } else if (typeof error === 'object' && error !== null) {
-        const err = error as any;
-        statusCode = err.response?.status;
-        errorCode = err.code;
+        const err = error as Record<string, unknown>;
+        statusCode = (err.response as Record<string, unknown>)?.status as number;
+        errorCode = err.code as string;
         
         if (err.isNetworkError) {
           errorMessage = `🔴 Network Error: ${err.message}`;
         } else if (statusCode === 400) {
-          errorMessage = err.response?.data?.message || '❌ Invalid registration data. Email may already exist.';
+          errorMessage = ((err.response as Record<string, unknown>)?.data as Record<string, unknown>)?.message as string || '❌ Invalid registration data. Email may already exist.';
         } else if (statusCode === 500) {
           errorMessage = '❌ Server error. Please try again later.';
-        } else if (err.response?.data?.message) {
-          errorMessage = err.response.data.message;
+        } else if ((err.response as Record<string, unknown>)?.data?.message) {
+          errorMessage = ((err.response as Record<string, unknown>)?.data as Record<string, unknown>)?.message as string;
         } else if (err.message) {
-          errorMessage = err.message;
+          errorMessage = err.message as string;
         }
       }
       
@@ -231,20 +231,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorMessage = error.message || 'Profile update failed';
         }
       } else if (typeof error === 'object' && error !== null) {
-        const err = error as any;
-        statusCode = err.response?.status;
-        errorCode = err.code;
+        const err = error as Record<string, unknown>;
+        statusCode = (err.response as Record<string, unknown>)?.status as number;
+        errorCode = err.code as string;
         
         if (err.isNetworkError) {
           errorMessage = `🔴 Network Error: ${err.message}`;
         } else if (statusCode === 400) {
-          errorMessage = err.response?.data?.message || '❌ Invalid data provided.';
+          errorMessage = ((err.response as Record<string, unknown>)?.data as Record<string, unknown>)?.message as string || '❌ Invalid data provided.';
         } else if (statusCode === 500) {
           errorMessage = '❌ Server error. Please try again later.';
-        } else if (err.response?.data?.message) {
-          errorMessage = err.response.data.message;
+        } else if ((err.response as Record<string, unknown>)?.data?.message) {
+          errorMessage = ((err.response as Record<string, unknown>)?.data as Record<string, unknown>)?.message as string;
         } else if (err.message) {
-          errorMessage = err.message;
+          errorMessage = err.message as string;
         }
       }
       

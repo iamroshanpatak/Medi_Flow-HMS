@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { NetworkError, APIError } from '@/types/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -30,11 +31,15 @@ api.interceptors.response.use(
   (error) => {
     // Handle network errors
     if (!error.response) {
-      const networkError = new Error(
-        `Network Error: Cannot connect to backend at ${API_URL}. Make sure the server is running on port 5001.`
-      );
-      (networkError as any).isNetworkError = true;
-      (networkError as any).originalError = error;
+      const networkError: NetworkError = Object.assign(
+        new Error(
+          `Network Error: Cannot connect to backend at ${API_URL}. Make sure the server is running on port 5001.`
+        ),
+        {
+          isNetworkError: true,
+          originalError: error,
+        }
+      ) as NetworkError;
       return Promise.reject(networkError);
     }
 
