@@ -211,27 +211,33 @@ router.post('/', protect, authorize('patient'), async (req, res) => {
     }
 
     // Check if doctor is available at this time
-    // For emergency appointments, allow double-booking of critical patients
-    // For regular appointments, prevent all conflicts
+    // CRITICAL: For emergency appointments, SKIP conflict checking - they override regular appointments
+    // For regular appointments, check for conflicts
     const isEmergencyType = type === 'emergency';
     
-    const conflictingAppointment = await Appointment.findOne({
-      doctor,
-      appointmentDate: parsedDate,
-      status: { $in: ['scheduled', 'confirmed'] },
-      // For emergency: only conflict with non-emergency, non-critical appointments
-      // For regular: conflict with everything
-      ...(isEmergencyType ? { type: { $nin: ['emergency'] } } : {}),
-      $or: [
-        { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
-      ],
-    });
-
-    if (conflictingAppointment) {
-      return res.status(409).json({
-        success: false,
-        message: `Time slot ${startTime}-${endTime} is already booked for this doctor. ${isEmergencyType ? 'Your emergency appointment will be prioritized.' : 'Please select a different time.'}`,
+    // Emergency appointments bypass conflict checking - they can be scheduled anytime
+    // because emergency patients get queue priority
+    if (!isEmergencyType) {
+      const conflictingAppointment = await Appointment.findOne({
+        doctor,
+        appointmentDate: parsedDate,
+        status: { $in: ['scheduled', 'confirmed'] },
+        $or: [
+          { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
+        ],
       });
+
+      if (conflictingAppointment) {
+        // For regular appointments, try to find alternative times
+        return res.status(409).json({
+          success: false,
+          message: `Time slot ${startTime}-${endTime} is already booked for this doctor. Please select a different time.`,
+          suggestedAlternative: true,
+        });
+      }
+    } else {
+      // Log emergency appointment bypass
+      console.log(`🚨 EMERGENCY appointment bypassing conflict check - will override if needed at ${startTime}-${endTime}`);
     }
 
     // Create appointment

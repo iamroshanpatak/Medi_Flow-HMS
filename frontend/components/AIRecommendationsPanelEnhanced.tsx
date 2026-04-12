@@ -57,6 +57,13 @@ interface TriageResult {
   message: string;
   matchedSymptoms?: string[];
   healthLevel?: 'critical' | 'high' | 'moderate' | 'low';
+  categorizedSymptoms?: {
+    critical: string[];
+    high: string[];
+    moderate: string[];
+    low: string[];
+    normal: string[];
+  };
 }
 
 interface Doctor {
@@ -256,6 +263,69 @@ export default function AIRecommendationsPanel() {
     }
   };
 
+  // Categorize symptoms by severity level
+  const categorizeSymptomsWithUnmatched = (matchedInput: string[], allInputSymptoms: string[]) => {
+    // Define severity levels for each department type
+    const severityMap: { [key: string]: 'critical' | 'high' | 'moderate' | 'low' } = {
+      'EMERGENCY': 'critical',
+      'CARDIOLOGY': 'high',
+      'NEUROLOGY': 'high',
+      'GASTROENTEROLOGY': 'moderate',
+      'ORTHOPEDICS': 'moderate',
+      'DERMATOLOGY': 'low',
+      'ENT': 'low',
+      'GENERAL_OPD': 'normal',
+      'GENERAL': 'normal',
+      'PEDIATRICS': 'moderate',
+      'PSYCHIATRY': 'moderate',
+      'OPHTHALMOLOGY': 'low',
+    };
+
+    const categorized = {
+      critical: Array<string>(),
+      high: Array<string>(),
+      moderate: Array<string>(),
+      low: Array<string>(),
+      normal: Array<string>(),
+    };
+
+    // Helper to normalize symptom text
+    const normalizeSymptom = (s: string) => s.toLowerCase().trim();
+
+    // Categorize matched symptoms
+    matchedInput.forEach(symptom => {
+      const normalized = normalizeSymptom(symptom);
+      // Default to low if not specified, but check if it's an emergency keyword
+      const emergencyKeywords = ['chest pain', 'breathing', 'unconscious', 'bleeding', 'heart attack', 'stroke'];
+      const isEmergency = emergencyKeywords.some(kw => normalized.includes(kw) || normalized.includes(kw));
+      
+      if (isEmergency) {
+        categorized.critical.push(symptom);
+      } else if (normalized.includes('palpitations') || normalized.includes('headache') || normalized.includes('migraine') || normalized.includes('seizure')) {
+        categorized.high.push(symptom);
+      } else if (normalized.includes('pain') || normalized.includes('ache') || normalized.includes('nausea')) {
+        categorized.moderate.push(symptom);
+      } else if (normalized.includes('rash') || normalized.includes('itching') || normalized.includes('ear')) {
+        categorized.low.push(symptom);
+      } else {
+        categorized.normal.push(symptom);
+      }
+    });
+
+    // Categorize unmatched symptoms as normal
+    allInputSymptoms.forEach(symptom => {
+      const isMatched = matchedInput.some(ms => 
+        normalizeSymptom(ms).includes(normalizeSymptom(symptom)) || 
+        normalizeSymptom(symptom).includes(normalizeSymptom(ms))
+      );
+      if (!isMatched && symptom.trim().length > 0) {
+        categorized.normal.push(symptom);
+      }
+    });
+
+    return categorized;
+  };
+
   const handleTriage = async () => {
     if (!symptoms.trim()) {
       setToast({ message: 'Please enter at least one symptom', type: 'warning' });
@@ -274,10 +344,26 @@ export default function AIRecommendationsPanel() {
       
       // Determine health severity level
       const healthLevel = result.confidence === 'high' ? 'critical' : result.confidence === 'medium' ? 'high' : 'moderate';
-      setTriageResult({ ...result, healthLevel });
+      
+      // Categorize symptoms by severity
+      const categorizedSymptoms = categorizeSymptomsWithUnmatched(result.matchedSymptoms || [], symptomsArray);
+      
+      setTriageResult({ 
+        ...result, 
+        healthLevel,
+        categorizedSymptoms,
+      });
       
       // Update trend based on symptoms
       updateSymptomTrend(result.label, healthLevel);
+      
+      console.log('🏥 Symptoms categorized:', {
+        critical: categorizedSymptoms.critical.length,
+        high: categorizedSymptoms.high.length,
+        moderate: categorizedSymptoms.moderate.length,
+        low: categorizedSymptoms.low.length,
+        normal: categorizedSymptoms.normal.length,
+      });
       
       setToast({ message: '🏥 AI Health analysis complete - Ready to book doctor', type: 'success' });
     } catch (err) {
@@ -355,13 +441,21 @@ export default function AIRecommendationsPanel() {
       let doctorsResponse = await doctorsAPI.getAll({ department: mappedDepartment });
       let availableDoctors = doctorsResponse.data.data || [];
 
-      console.log(`📋 Doctors available in ${mappedDepartment}:`, availableDoctors.length);
+      console.log(`📋 Doctors API Response:`, doctorsResponse.data);
+      console.log(`📋 Doctors available in ${mappedDepartment}:`, {
+        count: availableDoctors.length,
+        doctors: availableDoctors.map((d: any) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
+      });
 
       // If no doctors found in department AND it's emergency/critical, get any available doctor
       if (availableDoctors.length === 0 && isEmergency) {
         console.warn(`⚠️ No doctors in ${mappedDepartment}, finding any available doctor for emergency`);
         doctorsResponse = await doctorsAPI.getAll();
         availableDoctors = doctorsResponse.data.data || [];
+        console.log(`📋 All doctors available:`, {
+          count: availableDoctors.length,
+          doctors: availableDoctors.map((d: any) => ({ name: d.firstName + ' ' + d.lastName, id: d._id, dept: d.department }))
+        });
       }
 
       if (availableDoctors.length === 0) {
@@ -372,6 +466,13 @@ export default function AIRecommendationsPanel() {
 
       // Pick first available doctor
       const selectedDoctor = availableDoctors[0] as Doctor;
+
+      console.log(`✅ Selected doctor:`, {
+        name: selectedDoctor.firstName + ' ' + selectedDoctor.lastName,
+        id: selectedDoctor._id,
+        dept: selectedDoctor.department,
+        specialization: selectedDoctor.specialization
+      });
 
       if (!selectedDoctor._id) {
         setToast({ message: 'Invalid doctor data. Please try again.', type: 'error' });
@@ -434,45 +535,76 @@ export default function AIRecommendationsPanel() {
         type: isEmergency ? 'emergency' : 'consultation',
       };
 
-      console.log('📅 Booking appointment with data:', appointmentData);
+      console.log('� Appointment data validation:');
+      console.log('  ✓ doctor:', appointmentData.doctor);
+      console.log('  ✓ department:', appointmentData.department);
+      console.log('  ✓ appointmentDate:', appointmentData.appointmentDate);
+      console.log('  ✓ startTime:', appointmentData.startTime);
+      console.log('  ✓ endTime:', appointmentData.endTime);
+      console.log('  ✓ reason:', appointmentData.reason.substring(0, 50) + '...');
+      console.log('  ✓ type:', appointmentData.type);
+
+      console.log('📊 Complete appointment data being sent:', appointmentData);
 
       // Try to book appointment
       // For critical patients, if time slot fails, try alternative slots
-      let bookingResponse;
-      let bookingError = null;
+      let bookingResponse = null;
+      let lastError = null;
       
-      bookingResponse = await appointmentsAPI.create(appointmentData);
-      
-      if (!bookingResponse.data.success && isEmergency && timeSlots.length > 1) {
-        console.warn('⚠️ First time slot failed, trying alternatives for emergency appointment...');
+      // Try first time slot
+      try {
+        bookingResponse = await appointmentsAPI.create(appointmentData);
+        console.log('✅ Appointment booked successfully on first attempt:', bookingResponse.data);
+      } catch (firstAttemptError) {
+        console.warn('⚠️ First time slot failed:', firstAttemptError);
+        lastError = firstAttemptError;
         
-        // Try alternative time slots for critical/emergency patients
-        for (let i = 1; i < timeSlots.length; i++) {
-          const [altStartTime, altEndTime] = timeSlots[i].split('-');
-          const altAppointmentData = {
-            ...appointmentData,
-            startTime: altStartTime,
-            endTime: altEndTime,
-          };
+        // For emergency appointments, try alternative time slots
+        if (isEmergency && timeSlots.length > 1) {
+          console.log(`🔄 Trying ${timeSlots.length - 1} alternative time slots for emergency appointment...`);
           
-          try {
-            console.log(`🔄 Attempt ${i + 1}: Trying time slot ${altStartTime}-${altEndTime}`);
-            bookingResponse = await appointmentsAPI.create(altAppointmentData);
-            if (bookingResponse.data.success) {
-              console.log(`✅ Emergency appointment booked on attempt ${i + 1}`);
+          // Extract start and end time for first slot (already tried)
+          const [firstStartTime, firstEndTime] = timeSlots[0].split('-');
+          
+          // Try alternative time slots
+          for (let i = 1; i < timeSlots.length; i++) {
+            const [altStartTime, altEndTime] = timeSlots[i].split('-');
+            const altAppointmentData = {
+              ...appointmentData,
+              startTime: altStartTime,
+              endTime: altEndTime,
+            };
+            
+            try {
+              console.log(`🔄 Attempt ${i + 1}/${timeSlots.length}: Trying time slot ${altStartTime}-${altEndTime}`);
+              bookingResponse = await appointmentsAPI.create(altAppointmentData);
+              console.log(`✅ Emergency appointment booked on attempt ${i + 1} at ${altStartTime}-${altEndTime}`);
+              startTime = altStartTime;
+              endTime = altEndTime;
+              lastError = null;
               break;
-            }
-          } catch (slotError) {
-            console.warn(`⚠️ Slot ${i + 1} failed, trying next...`);
-            bookingError = slotError;
-            if (i === timeSlots.length - 1) {
-              throw bookingError;
+            } catch (slotError) {
+              console.warn(`❌ Slot attempt ${i + 1} failed:`, slotError);
+              lastError = slotError;
+              
+              if (i === timeSlots.length - 1) {
+                console.error('❌ All time slots failed for emergency appointment');
+              }
             }
           }
         }
       }
       
-      console.log('✅ Appointment booked successfully:', bookingResponse.data);
+      // If all attempts failed, throw the last error
+      if (!bookingResponse && lastError) {
+        throw lastError;
+      }
+      
+      if (!bookingResponse) {
+        throw new Error('Failed to book appointment - no response received');
+      }
+      
+      console.log('✅ Final appointment booked:', bookingResponse.data);
 
       // Set appointment as booked
       setBookedAppointment({
@@ -977,6 +1109,77 @@ Next Review: ${recommendations?.nextReviewDate}
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {triageResult.categorizedSymptoms && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-900">📊 Symptoms by Severity</p>
+                    
+                    {triageResult.categorizedSymptoms.critical && triageResult.categorizedSymptoms.critical.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-red-700 mb-1">🚨 Critical Symptoms ({triageResult.categorizedSymptoms.critical.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {triageResult.categorizedSymptoms.critical.map((symptom, idx) => (
+                            <span key={idx} className="bg-red-200 text-red-800 text-xs px-2 py-1 rounded font-medium">
+                              {symptom}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {triageResult.categorizedSymptoms.high && triageResult.categorizedSymptoms.high.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-orange-700 mb-1">⚠️ High Priority Symptoms ({triageResult.categorizedSymptoms.high.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {triageResult.categorizedSymptoms.high.map((symptom, idx) => (
+                            <span key={idx} className="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded font-medium">
+                              {symptom}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {triageResult.categorizedSymptoms.moderate && triageResult.categorizedSymptoms.moderate.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-yellow-700 mb-1">💛 Moderate Symptoms ({triageResult.categorizedSymptoms.moderate.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {triageResult.categorizedSymptoms.moderate.map((symptom, idx) => (
+                            <span key={idx} className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-medium">
+                              {symptom}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {triageResult.categorizedSymptoms.low && triageResult.categorizedSymptoms.low.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-blue-700 mb-1">ℹ️ Low Priority Symptoms ({triageResult.categorizedSymptoms.low.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {triageResult.categorizedSymptoms.low.map((symptom, idx) => (
+                            <span key={idx} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-medium">
+                              {symptom}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {triageResult.categorizedSymptoms.normal && triageResult.categorizedSymptoms.normal.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-green-700 mb-1">✅ Normal Symptoms ({triageResult.categorizedSymptoms.normal.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {triageResult.categorizedSymptoms.normal.map((symptom, idx) => (
+                            <span key={idx} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-medium">
+                              {symptom}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
